@@ -40,7 +40,7 @@ db = SQLAlchemy()
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_FILE = Path(os.environ["DB_FILE"]).expanduser() if os.environ.get("DB_FILE") else BASE_DIR / "data" / "support_bot.db"
 BACKUP_LOCK = threading.Lock()
-DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+DEFAULT_MODEL = (os.environ.get("GEMINI_MODEL") or "").strip() or "gemini-3.6-flash"
 
 
 class Setting(db.Model):
@@ -180,6 +180,18 @@ DEFAULT_SETTINGS = {
 }
 
 
+_TEXT_FALLBACKS = {
+    "WELCOME_MESSAGE": "سلام 👋\nبه ربات پشتیبانی خوش آمدید.\nاز منوی زیر می‌توانید درخواست جدید ثبت کنید یا سوالات متداول را مشاهده کنید.",
+    "BOT_NAME": "ربات پشتیبانی",
+    "ORGANIZATION_NAME": "تیم پشتیبانی",
+    "GEMINI_MODEL": DEFAULT_MODEL,
+    "GEMINI_SYSTEM_PROMPT": DEFAULT_SETTINGS["GEMINI_SYSTEM_PROMPT"],
+}
+for _k, _v in _TEXT_FALLBACKS.items():
+    if not str(DEFAULT_SETTINGS.get(_k) or "").strip():
+        DEFAULT_SETTINGS[_k] = _v
+
+
 def _database_uri():
     url = os.environ.get("DATABASE_URL", "").strip()
     if url:
@@ -286,7 +298,10 @@ def get_setting(key):
     if key in ENV_OVERRIDE_KEYS and os.environ.get(key, "").strip():
         return os.environ[key].strip()
     row = db.session.get(Setting, key)
-    return row.value if row else DEFAULT_SETTINGS.get(key, "")
+    value = row.value if row else DEFAULT_SETTINGS.get(key, "")
+    if key in _TEXT_FALLBACKS and not str(value or "").strip():
+        return _TEXT_FALLBACKS[key]
+    return value
 
 
 def set_setting(key, value):
@@ -443,10 +458,20 @@ class BaleClient:
             return {"ok": False, "description": str(exc)}
 
     def send_message(self, chat_id, text_value, markup=None):
-        data = {"chat_id": str(chat_id), "text": str(text_value)}
-        if markup:
-            data["reply_markup"] = markup
-        return self.call("sendMessage", data)
+        text_value = str(text_value if text_value is not None else "").strip()
+        if not text_value:
+            print(f"[BALE] skipped an empty message to {chat_id}", flush=True)
+            return {"ok": False, "description": "empty text skipped"}
+        chunks = [text_value[i:i + 3900] for i in range(0, len(text_value), 3900)]
+        res = {"ok": False}
+        for idx, chunk in enumerate(chunks):
+            data = {"chat_id": str(chat_id), "text": chunk}
+            if markup and idx == len(chunks) - 1:
+                data["reply_markup"] = markup
+            res = self.call("sendMessage", data)
+            if not res.get("ok"):
+                break
+        return res
 
     def send_document(self, chat_id, content, filename, caption=None):
         if not self.token:
@@ -526,6 +551,7 @@ def ai_reply(history, system_prompt):
                     db.session.commit()
                 continue
             if r.status_code != 200:
+                print(f"[GEMINI] HTTP {r.status_code} (model={model}): {r.text[:200]}", flush=True)
                 continue
             data = r.json()
             parts = ((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
@@ -536,7 +562,8 @@ def ai_reply(history, system_prompt):
                     key.last_used_at = datetime.utcnow()
                     db.session.commit()
                 return answer
-        except Exception:
+        except Exception as exc:
+            print(f"[GEMINI] request failed: {exc}", flush=True)
             continue
     return None
 
@@ -573,7 +600,7 @@ def handle_user_text(chat_id, sender, text_value, admin):
     state = get_state(chat_id)
 
     # Global commands/buttons always win over an unfinished state.
-    if text_value == "/start":
+    if text_value.split()[0].split("@")[0] == "/start":
         reset_state(chat_id)
         BaleClient().send_message(chat_id, get_setting("WELCOME_MESSAGE"), main_keyboard(admin))
         return
@@ -1284,6 +1311,12 @@ def create_app():
                 return jsonify(ok=True, duplicate=True)
             BOT_STATE["seen"].append(uid)
         BOT_STATE["last_update_at"] = datetime.utcnow().isoformat()
+        kind = "callback" if update.get("callback_query") else ("message" if update.get("message") else "other")
+        print(f"[BALE] webhook update {uid} ({kind})", flush=True)
+        try:
+            set_setting("LAST_UPDATE_AT", BOT_STATE["last_update_at"])
+        except Exception:
+            db.session.rollback()
         threading.Thread(target=process_update_async, args=(app, update), daemon=True).start()
         return jsonify(ok=True)
 
@@ -1308,7 +1341,9 @@ def create_app():
             pending_updates=wh.get("pending_update_count"),
             admins_count=len(all_admin_ids()),
             group_chat_id=get_setting("GROUP_CHAT_ID") or None,
-            last_update_at=BOT_STATE["last_update_at"],
+            last_update_at=get_setting("LAST_UPDATE_AT") or BOT_STATE["last_update_at"],
+            database_persistent=bool(os.environ.get("DATABASE_URL", "").strip()) or not str(DB_FILE).startswith(tempfile.gettempdir()),
+            database_kind="PostgreSQL" if os.environ.get("DATABASE_URL", "").strip() else f"SQLite ({DB_FILE})",
             last_error=BOT_STATE["last_error"],
             last_api_error=BOT_STATE["last_api_error"],
         )

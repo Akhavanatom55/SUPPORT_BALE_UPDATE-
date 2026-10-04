@@ -1,13 +1,27 @@
 {% extends 'base.html' %}
 {% block title %}{{ settings.ORGANIZATION_NAME or 'ربات پشتیبانی' }}{% endblock %}
 {% block content %}
+<div class="home-wrap">
 <section class="hero">
   <div>
     <span class="badge">ONLINE</span>
     <h1>{{ settings.BOT_NAME or 'ربات پشتیبانی' }}</h1>
-    <p>سامانه یکپارچه پشتیبانی، مدیریت تیکت، FAQ و ربات بله.</p>
-    <div class="actions"><a class="button" href="{{ url_for('login') }}">ورود به پنل مدیریت</a><a class="button ghost" href="{{ url_for('health') }}">Health Check</a></div>
+    <p>سامانه یکپارچه پشتیبانی؛ مدیریت تیکت، سوالات متداول، دستیار هوشمند و ربات بله — همه در یک پنل.</p>
+    <div class="actions"><a class="button" href="{{ url_for('login') }}">🚀 ورود به پنل مدیریت</a><a class="button ghost" href="{{ url_for('health') }}">Health Check</a></div>
   </div>
-  <div class="hero-box"><div class="pulse"></div><b>مرکز فرماندهی پشتیبانی</b><span>Bale · Gemini AI · Tickets</span></div>
+  <div class="hero-box">
+    <div>
+      <div class="orbit"><div class="r r1"><b>💬</b></div><div class="r r2"><b>🤖</b></div><div class="r r3"><b>🎫</b></div><div class="core"></div></div>
+      <div class="cap"><b>مرکز فرماندهی پشتیبانی</b><span>Bale · Gemini AI · Tickets</span></div>
+    </div>
+  </div>
 </section>
+<section class="features">
+  <div class="feature" style="--fh:190"><div class="fi">💬</div><h3>ربات بله</h3><p>کاربران درخواست‌شان را مستقیم در بله می‌نویسند.</p></div>
+  <div class="feature" style="--fh:320"><div class="fi">🔔</div><h3>اعلان به ادمین‌ها و گروه</h3><p>هر درخواست فوری برای ادمین‌ها و گروه پشتیبانی ارسال می‌شود.</p></div>
+  <div class="feature" style="--fh:45"><div class="fi">✨</div><h3>دستیار Gemini</h3><p>پاسخ خودکار هوشمند با چرخش کلیدها.</p></div>
+  <div class="feature" style="--fh:150"><div class="fi">🛡️</div><h3>پنل مدیریت وب</h3><p>تیکت، FAQ، پیام همگانی و پشتیبان‌گیری.</p></div>
+</section>
+<div class="marquee"><div><span>● Bale Bot</span><span>● Support Tickets</span><span>● Gemini AI</span><span>● Group Alerts</span><span>● Broadcast</span><span>● Backup &amp; Restore</span><span>● Bale Bot</span><span>● Support Tickets</span><span>● Gemini AI</span><span>● Group Alerts</span><span>● Broadcast</span><span>● Backup &amp; Restore</span></div></div>
+</div>
 {% endblock %}

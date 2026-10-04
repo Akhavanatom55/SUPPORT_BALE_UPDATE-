@@ -30,6 +30,7 @@ box.appendChild(chip(d.bot_ok,'اتصال به بله',d.bot_ok?('@'+(d.bot_user
 box.appendChild(chip(d.webhook_registered,'وبهوک',d.webhook_registered?'ثبت شده':(d.webhook_is_set?'روی آدرس دیگری ثبت است':'ثبت نشده')));
 box.appendChild(chip(d.admins_count>0,'ادمین‌ها',d.admins_count>0?(d.admins_count+' نفر'):'ADMIN_IDS تعریف نشده'));
 box.appendChild(chip(!!d.last_update_at,'آخرین پیام دریافتی',d.last_update_at||'هنوز پیامی نرسیده'));
+var dbc=chip(d.database_persistent,'دیتابیس',(d.database_kind||'')+(d.database_persistent?'':' — موقت! با ریستارت پاک می‌شود؛ DATABASE_URL (PostgreSQL) تنظیم کنید'));if(!d.database_persistent)dbc.className='chip warn';box.appendChild(dbc);
 if(d.webhook_last_error)box.appendChild(chip(false,'خطای وبهوک (بله)',d.webhook_last_error));
 if(d.last_api_error)box.appendChild(chip(false,'آخرین خطای API',d.last_api_error));
 if(d.last_error)box.appendChild(chip(false,'آخرین خطای پردازش','جزئیات در لاگ سرور'));
