@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}کاربران ربات{% endblock %}
+{% block content %}{% from '_ui.html' import icon, empty, head %}
+{{ head('کاربران ربات', total ~ ' کاربر ثبت‌شده · ' ~ blocked ~ ' مسدود') }}
+<section class="panel">
+  <div class="toolbar"><form class="searchbar" method="get">{{ icon('search', 18) }}<input name="q" value="{{ q }}" placeholder="جستجو: نام، نام کاربری یا شناسه عددی"><button class="btn secondary sm">جستجو</button></form></div>
+  <div class="table-wrap"><table><thead><tr><th>کاربر</th><th>شناسه بله</th><th>تیکت‌ها</th><th>آخرین فعالیت</th><th>وضعیت</th><th></th></tr></thead><tbody>
+  {% for u in users %}<tr>
+    <td><b>{{ (u.first_name ~ ' ' ~ u.last_name).strip() or '—' }}</b>{% if u.username %}<br><small class="muted" dir="ltr">@{{ u.username }}</small>{% endif %}</td>
+    <td dir="ltr" class="num">{{ u.chat_id }}</td><td class="num">{{ ticket_counts.get(u.chat_id, 0) }}</td><td class="muted nowrap">{{ u.last_seen_at|tehran }}</td>
+    <td><span class="status {{ 'closed' if u.is_blocked else 'answered' }}">{{ 'مسدود' if u.is_blocked else 'فعال' }}</span></td>
+    <td class="end"><div class="row-actions">
+      <button type="button" class="btn secondary sm" data-dialog="msg-{{ u.id }}">{{ icon('send', 16) }}پیام</button>
+      <form method="post" {% if not u.is_blocked %}data-confirm="این کاربر دیگر پیام همگانی دریافت نمی‌کند."{% endif %}><input type="hidden" name="id" value="{{ u.id }}"><input type="hidden" name="action" value="{{ 'unblock' if u.is_blocked else 'block' }}"><button class="btn {{ 'success' if u.is_blocked else 'danger' }} sm">{{ icon('ban', 16) }}{{ 'رفع مسدودی' if u.is_blocked else 'مسدود' }}</button></form>
+      <dialog id="msg-{{ u.id }}"><form method="post"><div class="dlg-body"><h3>ارسال پیام به {{ (u.first_name ~ ' ' ~ u.last_name).strip() or u.chat_id }}</h3><input type="hidden" name="id" value="{{ u.id }}"><input type="hidden" name="action" value="message"><label>متن پیام<textarea name="body" rows="5" required></textarea></label></div><div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button class="btn primary">{{ icon('send', 16) }}ارسال</button></div></form></dialog>
+    </div></td></tr>
+  {% else %}<tr><td colspan="6">{{ empty('کاربری پیدا نشد', 'کاربران با اولین پیام در ربات اینجا ثبت می‌شوند.') }}</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

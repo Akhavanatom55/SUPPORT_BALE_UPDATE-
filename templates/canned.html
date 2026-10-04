@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}پاسخ‌های آماده{% endblock %}
+{% block content %}{% from '_ui.html' import icon, empty, head %}
+{{ head('پاسخ‌های آماده', 'متن‌های پرکاربرد که هنگام پاسخ به تیکت با یک کلیک درج می‌شوند') }}
+<div class="grid-2">
+<section class="panel"><div class="panel-head"><h2>افزودن پاسخ آماده</h2></div>
+  <form method="post" class="stack"><input type="hidden" name="action" value="add">
+    <label>عنوان کوتاه<input name="title" required placeholder="مثلاً: سلام و احوالپرسی"></label>
+    <label>متن پاسخ<textarea name="body" rows="7" required></textarea></label>
+    <label>کلیدواژه‌ها (اختیاری)<input name="keywords" placeholder="با ویرگول جدا کنید"></label>
+    <button class="btn primary">{{ icon('plus', 18) }}ذخیره پاسخ</button>
+  </form></section>
+<section class="panel"><div class="panel-head"><h2>فهرست ({{ items|length }})</h2></div>
+  {% for c in items %}<div class="list-row {{ 'off' if not c.is_active }}">
+    <div class="grow"><b>{{ c.title }}</b><div class="muted clamp">{{ c.body }}</div></div>
+    <div class="row-actions">
+      <form method="post"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ c.id }}"><button class="btn {{ 'success' if c.is_active else 'ghost' }} sm">{{ 'فعال' if c.is_active else 'غیرفعال' }}</button></form>
+      <button type="button" class="btn secondary sm icon-only" title="ویرایش" data-dialog="cr-{{ c.id }}">{{ icon('edit', 16) }}</button>
+      <form method="post" data-confirm="این پاسخ آماده حذف شود؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ c.id }}"><button class="btn danger sm icon-only" title="حذف">{{ icon('trash', 16) }}</button></form>
+    </div>
+    <dialog id="cr-{{ c.id }}"><form method="post"><div class="dlg-body stack"><h3>ویرایش پاسخ آماده</h3><input type="hidden" name="action" value="edit"><input type="hidden" name="id" value="{{ c.id }}"><label>عنوان<input name="title" value="{{ c.title }}" required></label><label>متن<textarea name="body" rows="7" required>{{ c.body }}</textarea></label><label>کلیدواژه‌ها<input name="keywords" value="{{ c.keywords }}"></label></div><div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button class="btn primary">ذخیره تغییرات</button></div></form></dialog>
+  </div>{% else %}{{ empty('پاسخ آماده‌ای وجود ندارد', 'پاسخ‌های تکراری را یک‌بار بنویسید و همیشه استفاده کنید.') }}{% endfor %}
+</section></div>
+{% endblock %}

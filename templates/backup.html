@@ -1,4 +1,15 @@
 {% extends 'base.html' %}
-{% block title %}پشتیبان دیتابیس{% endblock %}
-{% block content %}<h1>پشتیبان و بازیابی دیتابیس</h1><div class="grid-2"><section class="panel"><h2>دریافت</h2><p>یک فایل JSON کامل از تنظیمات، کاربران، تیکت‌ها، FAQ، کلیدهای Gemini و ادمین‌ها می‌سازد.</p><a class="button" href="{{ url_for('backup_download') }}">📦 دریافت پشتیبان</a></section><section class="panel"><h2>بازیابی</h2><form method="post" enctype="multipart/form-data" class="stack"><label>فایل JSON پشتیبان<input type="file" name="backup" accept="application/json,.json" required></label><button class="danger-btn">بازیابی و جایگزینی</button></form><p class="muted">قبل از بازیابی یک Backup جدید بگیر.</p></section></div>
+{% block title %}پشتیبان‌گیری{% endblock %}
+{% block content %}{% from '_ui.html' import icon, head %}
+{{ head('پشتیبان‌گیری و بازیابی', 'نسخه کامل داده‌ها را دریافت یا جایگزین کنید') }}
+<div class="grid-2">
+<section class="panel"><div class="panel-head"><h2>دریافت پشتیبان</h2></div>
+  <p class="muted">یک فایل JSON شامل تنظیمات، کاربران، تیکت‌ها، FAQ، پاسخ‌های آماده، کلیدهای Gemini و ادمین‌ها ساخته می‌شود.</p>
+  <a class="btn primary lg mt" href="{{ url_for('backup_download') }}">{{ icon('download', 18) }}دریافت فایل پشتیبان</a></section>
+<section class="panel"><div class="panel-head"><h2>بازیابی از فایل</h2></div>
+  <form method="post" enctype="multipart/form-data" class="stack" data-confirm="اطلاعات فعلی با محتوای فایل جایگزین می‌شود. حتماً قبلاً یک پشتیبان جدید گرفته باشید.">
+    <label>فایل JSON پشتیبان<input type="file" name="backup" accept="application/json,.json" required></label>
+    <button class="btn danger">{{ icon('upload', 18) }}بازیابی و جایگزینی</button></form>
+  <p class="muted note">پیش از بازیابی، یک پشتیبان تازه بگیرید.</p></section>
+</div>
 {% endblock %}

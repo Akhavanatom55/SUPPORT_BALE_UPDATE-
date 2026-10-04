@@ -1,36 +1,68 @@
+{% from '_ui.html' import icon %}
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}پنل پشتیبانی{% endblock %}</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="theme-color" content="#060a14">
+  <title>{% block title %}پنل پشتیبانی{% endblock %} — {{ org_name or 'پنل پشتیبانی' }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>🎧</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 rx=%2726%27 fill=%27%234f8cff%27/><circle cx=%2750%27 cy=%2750%27 r=%2718%27 fill=%27white%27/></svg>">
 </head>
-<body>
+<body class="{{ 'is-auth' if session.get('panel_user_id') else 'is-guest' }}">
   <div class="bg-mesh"><i></i><i></i><i></i><i></i><i></i></div>
   <div class="bg-aurora"></div><div class="bg-floor"></div>
   <canvas id="fx"></canvas><div id="spot"></div><div class="grain"></div>
+
   {% if session.get('panel_user_id') %}
-  <aside class="sidebar">
-    <div class="brand">🎧 پنل پشتیبانی</div>
-    <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}"><span class="ic">📊</span>داشبورد</a>
-    <a href="{{ url_for('tickets_page') }}" class="{{ 'active' if request.endpoint=='tickets_page' }}"><span class="ic">🎫</span>تیکت‌ها</a>
-    <a href="{{ url_for('faq_page') }}" class="{{ 'active' if request.endpoint=='faq_page' }}"><span class="ic">❓</span>سوالات متداول</a>
-    <a href="{{ url_for('gemini_page') }}" class="{{ 'active' if request.endpoint=='gemini_page' }}"><span class="ic">✨</span>Gemini</a>
-    <a href="{{ url_for('admins_page') }}" class="{{ 'active' if request.endpoint=='admins_page' }}"><span class="ic">🛡️</span>ادمین‌ها</a>
-    <a href="{{ url_for('broadcast_page') }}" class="{{ 'active' if request.endpoint=='broadcast_page' }}"><span class="ic">📣</span>پیام همگانی</a>
-    <a href="{{ url_for('backup_page') }}" class="{{ 'active' if request.endpoint=='backup_page' }}"><span class="ic">💾</span>پشتیبان دیتابیس</a>
-    <a href="{{ url_for('settings_page') }}" class="{{ 'active' if request.endpoint=='settings_page' }}"><span class="ic">⚙️</span>تنظیمات</a>
-    <a href="{{ url_for('logout') }}" class="danger"><span class="ic">🚪</span>خروج</a>
+  <header class="mbar">
+    <button type="button" class="icon-btn" id="menuBtn" aria-label="منو">{{ icon('menu', 22) }}</button>
+    <b>{{ org_name or 'پنل پشتیبانی' }}</b>
+  </header>
+  <div class="scrim" id="scrim"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="logo-mark">{{ icon('bot', 22) }}</span>
+      <div><b>{{ org_name or 'پنل پشتیبانی' }}</b><small>{{ bot_name or 'ربات پشتیبانی' }}</small></div>
+    </div>
+    <nav>
+      <div class="nav-group">عملیات</div>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}" style="--hh:215">{{ icon('dashboard') }}<span>داشبورد</span></a>
+      <a href="{{ url_for('tickets_page') }}" class="{{ 'active' if request.endpoint in ('tickets_page','ticket_detail') }}" style="--hh:38">{{ icon('ticket') }}<span>تیکت‌ها</span>{% if open_badge %}<em class="count">{{ open_badge }}</em>{% endif %}</a>
+      <a href="{{ url_for('users_page') }}" class="{{ 'active' if request.endpoint=='users_page' }}" style="--hh:190">{{ icon('users') }}<span>کاربران ربات</span></a>
+      <a href="{{ url_for('faq_page') }}" class="{{ 'active' if request.endpoint=='faq_page' }}" style="--hh:160">{{ icon('help') }}<span>سوالات متداول</span></a>
+      <a href="{{ url_for('canned_page') }}" class="{{ 'active' if request.endpoint=='canned_page' }}" style="--hh:265">{{ icon('reply') }}<span>پاسخ‌های آماده</span></a>
+      <div class="nav-group">ارتباطات و هوش مصنوعی</div>
+      <a href="{{ url_for('broadcast_page') }}" class="{{ 'active' if request.endpoint=='broadcast_page' }}" style="--hh:330">{{ icon('megaphone') }}<span>پیام همگانی</span></a>
+      <a href="{{ url_for('gemini_page') }}" class="{{ 'active' if request.endpoint=='gemini_page' }}" style="--hh:280">{{ icon('spark') }}<span>Gemini</span></a>
+      <div class="nav-group">مدیریت سامانه</div>
+      <a href="{{ url_for('admins_page') }}" class="{{ 'active' if request.endpoint=='admins_page' }}" style="--hh:200">{{ icon('shield') }}<span>ادمین‌های ربات</span></a>
+      <a href="{{ url_for('team_page') }}" class="{{ 'active' if request.endpoint=='team_page' }}" style="--hh:175">{{ icon('team') }}<span>کاربران پنل</span></a>
+      <a href="{{ url_for('backup_page') }}" class="{{ 'active' if request.endpoint=='backup_page' }}" style="--hh:20">{{ icon('db') }}<span>پشتیبان‌گیری</span></a>
+      <a href="{{ url_for('settings_page') }}" class="{{ 'active' if request.endpoint=='settings_page' }}" style="--hh:235">{{ icon('gear') }}<span>تنظیمات</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="who"><span class="avatar">{{ (session.get('panel_username') or 'A')[:1]|upper }}</span><div><b>{{ session.get('panel_username') }}</b><small>مدیر سامانه</small></div></div>
+      <a href="{{ url_for('logout') }}" class="logout" title="خروج">{{ icon('logout', 18) }}</a>
+    </div>
   </aside>
   {% endif %}
+
   <main class="content {% if not session.get('panel_user_id') %}full{% endif %}">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
-    {% endwith %}
     {% block content %}{% endblock %}
   </main>
+
+  <div class="toasts" aria-live="polite">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="flash {{ category }}" role="status"><span class="dot"></span><p>{{ message }}</p><button type="button" class="x" aria-label="بستن">{{ icon('x', 16) }}</button></div>{% endfor %}
+    {% endwith %}
+  </div>
+
+  <dialog id="confirmBox">
+    <div class="dlg-body"><h3 id="confirmTitle">تأیید عملیات</h3><p class="muted" id="confirmText"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button type="button" class="btn danger" id="confirmOk">تأیید و ادامه</button></div>
+  </dialog>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

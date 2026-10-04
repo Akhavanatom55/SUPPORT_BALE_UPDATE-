@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}کاربران پنل{% endblock %}
+{% block content %}{% from '_ui.html' import icon, empty, head %}
+{{ head('کاربران پنل مدیریت', 'حساب‌هایی که می‌توانند وارد این پنل شوند') }}
+<div class="grid-2">
+<div class="stack-lg">
+<section class="panel"><div class="panel-head"><h2>افزودن کاربر پنل</h2></div>
+  <form method="post" class="stack"><input type="hidden" name="action" value="add">
+    <label>نام کاربری<input name="username" required dir="ltr" autocomplete="off"></label>
+    <label>رمز عبور (حداقل ۸ کاراکتر)<input type="password" name="password" required minlength="8" dir="ltr" autocomplete="new-password"></label>
+    <button class="btn primary">{{ icon('plus', 18) }}ساخت کاربر</button></form></section>
+<section class="panel"><div class="panel-head"><h2>تغییر رمز خودم</h2></div>
+  <form method="post" class="stack"><input type="hidden" name="action" value="change_own">
+    <label>رمز فعلی<input type="password" name="current_password" required dir="ltr" autocomplete="current-password"></label>
+    <label>رمز جدید<input type="password" name="new_password" required minlength="8" dir="ltr" autocomplete="new-password"></label>
+    <label>تکرار رمز جدید<input type="password" name="confirm_password" required minlength="8" dir="ltr" autocomplete="new-password"></label>
+    <button class="btn secondary">{{ icon('lock', 18) }}تغییر رمز</button></form></section>
+</div>
+<section class="panel"><div class="panel-head"><h2>فهرست کاربران ({{ users|length }})</h2></div>
+  {% for u in users %}<div class="list-row"><div class="grow"><b dir="ltr">{{ u.username }}</b>{% if u.id == me %} <span class="badge live"><i></i>شما</span>{% endif %}<div class="muted">ساخته‌شده: {{ u.created_at|tehran('%Y/%m/%d') }}</div></div>
+    <div class="row-actions"><button type="button" class="btn secondary sm" data-dialog="usr-{{ u.id }}">{{ icon('key', 16) }}تعیین رمز</button>
+    {% if u.id != me %}<form method="post" data-confirm="حساب «{{ u.username }}» حذف شود؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ u.id }}"><button class="btn danger sm icon-only" title="حذف">{{ icon('trash', 16) }}</button></form>{% endif %}</div>
+    <dialog id="usr-{{ u.id }}"><form method="post"><div class="dlg-body stack"><h3>تعیین رمز جدید برای {{ u.username }}</h3><input type="hidden" name="action" value="reset"><input type="hidden" name="id" value="{{ u.id }}"><label>رمز جدید<input type="password" name="password" required minlength="8" dir="ltr" autocomplete="new-password"></label></div><div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button class="btn primary">ذخیره رمز</button></div></form></dialog></div>
+  {% endfor %}
+</section></div>
+{% endblock %}

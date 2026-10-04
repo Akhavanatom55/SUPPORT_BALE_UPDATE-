@@ -1,5 +1,24 @@
 {% extends 'base.html' %}
 {% block title %}سوالات متداول{% endblock %}
-{% block content %}
-<h1>سوالات متداول</h1><div class="grid-2"><section class="panel"><h2>افزودن</h2><form method="post" class="stack"><input type="hidden" name="action" value="add"><label>سوال<input name="question" required></label><label>پاسخ<textarea name="answer" rows="7" required></textarea></label><button>ذخیره FAQ</button></form></section><section class="panel"><h2>لیست</h2>{% for f in faqs %}<div class="list-row"><div><b>{{ f.question }}</b><div class="muted">{{ f.answer[:160] }}</div></div><div class="actions"><form method="post"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ f.id }}"><button class="small ghost">{{ 'فعال' if f.is_published else 'غیرفعال' }}</button></form><form method="post"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ f.id }}"><button class="small danger-btn">حذف</button></form></div></div>{% else %}<p class="muted">موردی نیست.</p>{% endfor %}</section></div>
+{% block content %}{% from '_ui.html' import icon, empty, head %}
+{{ head('سوالات متداول', 'پاسخ‌هایی که ربات به کاربران نشان می‌دهد و Gemini از آن‌ها استفاده می‌کند') }}
+<div class="grid-2">
+<section class="panel"><div class="panel-head"><h2>افزودن سوال</h2></div>
+  <form method="post" class="stack"><input type="hidden" name="action" value="add">
+    <label>سوال<input name="question" required></label>
+    <label>پاسخ<textarea name="answer" rows="7" required></textarea></label>
+    <label>ترتیب نمایش<input name="sort_order" type="number" value="0" dir="ltr"><small class="hint">عدد کوچک‌تر بالاتر نمایش داده می‌شود.</small></label>
+    <button class="btn primary">{{ icon('plus', 18) }}ذخیره سوال</button>
+  </form></section>
+<section class="panel"><div class="panel-head"><h2>فهرست ({{ faqs|length }})</h2></div>
+  {% for f in faqs %}<div class="list-row {{ 'off' if not f.is_published }}">
+    <div class="grow"><b>{{ f.question }}</b><div class="muted clamp">{{ f.answer }}</div><small class="muted">ترتیب {{ f.sort_order }} · {{ f.view_count or 0 }} بازدید</small></div>
+    <div class="row-actions">
+      <form method="post"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ f.id }}"><button class="btn {{ 'success' if f.is_published else 'ghost' }} sm">{{ 'منتشرشده' if f.is_published else 'مخفی' }}</button></form>
+      <button type="button" class="btn secondary sm icon-only" title="ویرایش" data-dialog="faq-{{ f.id }}">{{ icon('edit', 16) }}</button>
+      <form method="post" data-confirm="این سوال حذف شود؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ f.id }}"><button class="btn danger sm icon-only" title="حذف">{{ icon('trash', 16) }}</button></form>
+    </div>
+    <dialog id="faq-{{ f.id }}"><form method="post"><div class="dlg-body stack"><h3>ویرایش سوال</h3><input type="hidden" name="action" value="edit"><input type="hidden" name="id" value="{{ f.id }}"><label>سوال<input name="question" value="{{ f.question }}" required></label><label>پاسخ<textarea name="answer" rows="7" required>{{ f.answer }}</textarea></label><label>ترتیب نمایش<input name="sort_order" type="number" value="{{ f.sort_order }}" dir="ltr"></label></div><div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button class="btn primary">ذخیره تغییرات</button></div></form></dialog>
+  </div>{% else %}{{ empty('هنوز سوالی اضافه نشده', 'از فرم کنار صفحه اولین سوال را ثبت کنید.') }}{% endfor %}
+</section></div>
 {% endblock %}

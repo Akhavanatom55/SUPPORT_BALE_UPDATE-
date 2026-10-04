@@ -31,7 +31,7 @@ from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
-from sqlalchemy import DateTime, inspect, text
+from sqlalchemy import DateTime, func, inspect, text
 from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -41,6 +41,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DB_FILE = Path(os.environ["DB_FILE"]).expanduser() if os.environ.get("DB_FILE") else BASE_DIR / "data" / "support_bot.db"
 BACKUP_LOCK = threading.Lock()
 DEFAULT_MODEL = (os.environ.get("GEMINI_MODEL") or "").strip() or "gemini-3.6-flash"
+TEHRAN_OFFSET = timedelta(hours=3, minutes=30)
+WEEKDAYS_FA = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه", "یکشنبه"]
+STATUS_FA = {"open": "باز", "answered": "پاسخ داده شده", "closed": "بسته"}
+LOGIN_FAILS = {}
 
 
 class Setting(db.Model):
@@ -1089,9 +1093,48 @@ def create_app():
         BOT_STATE["boot_registered"] = True
         threading.Thread(target=_bg_register, args=(app, request.url_root), daemon=True).start()
 
+    @app.before_request
+    def _csrf_protect():
+        if request.method != "POST" or request.path.startswith("/api/bale/webhook/"):
+            return None
+        sent = request.form.get("_csrf") or request.headers.get("X-CSRF-Token", "")
+        if not sent or sent != session.get("csrf"):
+            flash("نشست امنیتی منقضی شده است. صفحه را دوباره باز کنید و عملیات را تکرار کنید.", "error")
+            return redirect(request.referrer or url_for("login"))
+        return None
+
+    @app.context_processor
+    def _inject_globals():
+        if "csrf" not in session:
+            session["csrf"] = hashlib.sha256(os.urandom(32)).hexdigest()
+        data = {"csrf_token": lambda: session.get("csrf", ""), "org_name": "", "bot_name": "", "open_badge": 0}
+        try:
+            data["org_name"] = get_setting("ORGANIZATION_NAME")
+            data["bot_name"] = get_setting("BOT_NAME")
+            if session.get("panel_user_id"):
+                data["open_badge"] = Ticket.query.filter_by(status="open").count()
+        except Exception:
+            db.session.rollback()
+        return data
+
+    @app.template_filter("tehran")
+    def _tehran(value, fmt="%Y/%m/%d  %H:%M"):
+        if not value:
+            return "—"
+        return (value + TEHRAN_OFFSET).strftime(fmt)
+
+    @app.template_filter("status_fa")
+    def _status_fa(value):
+        return STATUS_FA.get(value, value)
+
+    @app.template_filter("mask_key")
+    def _mask_key(value):
+        value = value or ""
+        return value if len(value) <= 12 else value[:6] + "••••••••" + value[-4:]
+
     @app.get("/")
     def home():
-        return render_template("home.html", settings=DEFAULT_SETTINGS)
+        return render_template("home.html", settings={"BOT_NAME": get_setting("BOT_NAME"), "ORGANIZATION_NAME": get_setting("ORGANIZATION_NAME")})
 
     @app.get("/health")
     def health():
@@ -1111,13 +1154,27 @@ def create_app():
             maybe_register_webhook(request.url_root)
         except Exception:
             pass
+        if session.get("panel_user_id") and request.method == "GET":
+            return redirect(url_for("dashboard"))
         if request.method == "POST":
+            ip = request.remote_addr or "?"
+            now_ts = time.time()
+            fails = [t for t in LOGIN_FAILS.get(ip, []) if now_ts - t < 600]
+            LOGIN_FAILS[ip] = fails
+            if len(fails) >= 8:
+                flash("تعداد تلاش‌های ناموفق زیاد بود. ده دقیقه بعد دوباره امتحان کنید.", "error")
+                return render_template("login.html")
             username = request.form.get("username", "").strip()
             password = request.form.get("password", "")
             user = PanelUser.query.filter_by(username=username).first()
             if user and check_password_hash(user.password_hash, password):
+                LOGIN_FAILS.pop(ip, None)
                 session.clear(); session["panel_user_id"] = user.id; session["panel_username"] = user.username
-                return redirect(request.args.get("next") or url_for("dashboard"))
+                nxt = request.args.get("next", "")
+                if not nxt.startswith("/") or nxt.startswith("//"):
+                    nxt = url_for("dashboard")
+                return redirect(nxt)
+            fails.append(now_ts)
             flash("نام کاربری یا رمز عبور اشتباه است.", "error")
         return render_template("login.html")
 
@@ -1130,64 +1187,179 @@ def create_app():
     def dashboard():
         counts = {
             "users": BaleUser.query.count(),
-            "open": Ticket.query.filter(Ticket.status != "closed").count(),
+            "open": Ticket.query.filter_by(status="open").count(),
+            "answered": Ticket.query.filter_by(status="answered").count(),
+            "closed": Ticket.query.filter_by(status="closed").count(),
             "faq": Faq.query.filter_by(is_published=True).count(),
             "admins": len(all_admin_ids()),
+            "blocked": BaleUser.query.filter_by(is_blocked=True).count(),
+            "gemini_keys": GeminiKey.query.filter_by(is_active=True).count(),
         }
+        counts["total"] = counts["open"] + counts["answered"] + counts["closed"]
+        midnight = (datetime.utcnow() + TEHRAN_OFFSET).replace(hour=0, minute=0, second=0, microsecond=0)
+        series = []
+        for i in range(6, -1, -1):
+            start = midnight - timedelta(days=i)
+            n = Ticket.query.filter(Ticket.created_at >= start - TEHRAN_OFFSET, Ticket.created_at < start + timedelta(days=1) - TEHRAN_OFFSET).count()
+            series.append({"label": WEEKDAYS_FA[start.weekday()], "count": n})
+        peak = max([x["count"] for x in series] + [1])
+        for x in series:
+            x["pct"] = round(x["count"] / peak * 100)
+        rated = db.session.query(func.avg(Ticket.rating)).filter(Ticket.rating.isnot(None)).scalar()
         recent = Ticket.query.order_by(Ticket.id.desc()).limit(8).all()
-        return render_template("dashboard.html", counts=counts, recent=recent)
+        return render_template("dashboard.html", counts=counts, recent=recent, series=series, today=series[-1]["count"], avg_rating=(round(float(rated), 1) if rated else None))
 
     @app.route("/admin/tickets", methods=["GET", "POST"])
     @login_required
     def tickets_page():
         if request.method == "POST":
-            tid = int(request.form.get("ticket_id", 0))
+            try:
+                tid = int(request.form.get("ticket_id", 0))
+            except ValueError:
+                tid = 0
             action = request.form.get("action")
             t = db.session.get(Ticket, tid)
+            back = url_for("tickets_page")
+            ret = request.form.get("return_to") or ""
+            if ret.startswith("/") and not ret.startswith("//"):
+                back = ret
+            if request.form.get("back") == "detail":
+                back = url_for("ticket_detail", ticket_id=tid)
             if t:
                 if action == "reply":
                     body = request.form.get("body", "").strip()
                     if body:
                         db.session.add(TicketMessage(ticket_id=t.id, sender="admin", sender_name=session.get("panel_username", "admin"), body=body))
                         t.status = "answered"; t.updated_at = datetime.utcnow(); t.assigned_admin_chat_id = None
-                        db.session.commit(); BaleClient().send_message(t.user_chat_id, f"💬 پاسخ پشتیبانی برای درخواست #{t.id}:\n\n{body}")
+                        db.session.commit()
+                        res = BaleClient().send_message(t.user_chat_id, f"💬 پاسخ پشتیبانی برای درخواست #{t.id}:\n\n{body}")
+                        if res.get("ok"):
+                            flash("پاسخ ثبت و برای کاربر ارسال شد.", "success")
+                        else:
+                            flash("پاسخ ثبت شد، اما ارسال آن به بله ناموفق بود: " + str(res.get("description") or ""), "error")
                 elif action == "close":
-                    t.status = "closed"; t.updated_at = datetime.utcnow(); db.session.commit()
+                    t.status = "closed"; t.updated_at = datetime.utcnow(); db.session.commit(); flash("تیکت بسته شد.", "success")
+                elif action == "reopen":
+                    t.status = "open"; t.updated_at = datetime.utcnow(); db.session.commit(); flash("تیکت دوباره باز شد.", "success")
                 elif action == "toggle_ai":
-                    t.ai_enabled = not bool(t.ai_enabled); db.session.commit()
-            return redirect(url_for("tickets_page"))
+                    t.ai_enabled = not bool(t.ai_enabled); db.session.commit(); flash("وضعیت دستیار هوشمند این تیکت تغییر کرد.", "success")
+                elif action == "delete":
+                    TicketMessage.query.filter_by(ticket_id=t.id).delete()
+                    db.session.delete(t); db.session.commit(); flash(f"تیکت #{tid} حذف شد.", "success")
+                    back = url_for("tickets_page")
+            return redirect(back)
         status = request.args.get("status", "all")
-        q = Ticket.query.order_by(Ticket.id.desc())
-        if status in {"open", "answered", "closed"}:
-            q = q.filter_by(status=status)
-        items = q.limit(100).all()
-        return render_template("tickets.html", tickets=items)
+        q = (request.args.get("q") or "").strip()
+        try:
+            page = max(1, int(request.args.get("page", 1)))
+        except ValueError:
+            page = 1
+        query = Ticket.query
+        if status in STATUS_FA:
+            query = query.filter_by(status=status)
+        if q:
+            like = f"%{q}%"
+            conds = [Ticket.subject.ilike(like), Ticket.user_name.ilike(like), Ticket.user_chat_id.ilike(like)]
+            if q.lstrip("#").isdigit():
+                conds.append(Ticket.id == int(q.lstrip("#")))
+            query = query.filter(db.or_(*conds))
+        pager = query.order_by(Ticket.id.desc()).paginate(page=page, per_page=20, error_out=False)
+        tab_counts = {k: v for k, v in db.session.query(Ticket.status, func.count(Ticket.id)).group_by(Ticket.status).all()}
+        tab_counts["all"] = sum(tab_counts.values())
+        return render_template("tickets.html", tickets=pager.items, pager=pager, status=status, q=q, tab_counts=tab_counts)
 
     @app.get("/admin/tickets/<int:ticket_id>")
     @login_required
     def ticket_detail(ticket_id):
         ticket = db.session.get(Ticket, ticket_id)
-        if not ticket: return "Not found", 404
+        if not ticket:
+            return "تیکت پیدا نشد.", 404
         messages = TicketMessage.query.filter_by(ticket_id=ticket_id).order_by(TicketMessage.id.asc()).all()
-        return render_template("ticket_detail.html", ticket=ticket, messages=messages)
+        canned = CannedResponse.query.filter_by(is_active=True).order_by(CannedResponse.title.asc()).all()
+        return render_template("ticket_detail.html", ticket=ticket, messages=messages, canned=canned)
+
+    @app.route("/admin/users", methods=["GET", "POST"])
+    @login_required
+    def users_page():
+        if request.method == "POST":
+            action = request.form.get("action")
+            try:
+                u = db.session.get(BaleUser, int(request.form.get("id", 0)))
+            except ValueError:
+                u = None
+            if u:
+                if action == "block":
+                    u.is_blocked = True; db.session.commit(); flash("کاربر مسدود شد و پیام همگانی دریافت نمی‌کند.", "success")
+                elif action == "unblock":
+                    u.is_blocked = False; db.session.commit(); flash("مسدودیت کاربر برداشته شد.", "success")
+                elif action == "message":
+                    body = request.form.get("body", "").strip()
+                    if body:
+                        res = BaleClient().send_message(u.chat_id, body)
+                        flash("پیام ارسال شد." if res.get("ok") else "ارسال ناموفق بود: " + str(res.get("description") or ""), "success" if res.get("ok") else "error")
+            return redirect(request.full_path.rstrip("?") if request.query_string else url_for("users_page"))
+        q = (request.args.get("q") or "").strip()
+        query = BaleUser.query
+        if q:
+            like = f"%{q}%"
+            query = query.filter(db.or_(BaleUser.chat_id.ilike(like), BaleUser.first_name.ilike(like), BaleUser.last_name.ilike(like), BaleUser.username.ilike(like)))
+        users = query.order_by(BaleUser.last_seen_at.desc()).limit(200).all()
+        ticket_counts = {k: v for k, v in db.session.query(Ticket.user_chat_id, func.count(Ticket.id)).group_by(Ticket.user_chat_id).all()}
+        return render_template("users.html", users=users, q=q, ticket_counts=ticket_counts, total=BaleUser.query.count(), blocked=BaleUser.query.filter_by(is_blocked=True).count())
 
     @app.route("/admin/faq", methods=["GET", "POST"])
     @login_required
     def faq_page():
         if request.method == "POST":
             action = request.form.get("action")
+            def _order():
+                try:
+                    return int(request.form.get("sort_order", 0) or 0)
+                except ValueError:
+                    return 0
             if action == "add":
                 q = request.form.get("question", "").strip(); a = request.form.get("answer", "").strip()
                 if q and a:
-                    db.session.add(Faq(question=q, answer=a)); db.session.commit()
-            elif action == "delete":
-                f = db.session.get(Faq, int(request.form.get("id", 0)))
-                if f: db.session.delete(f); db.session.commit()
-            elif action == "toggle":
-                f = db.session.get(Faq, int(request.form.get("id", 0)))
-                if f: f.is_published = not f.is_published; db.session.commit()
+                    db.session.add(Faq(question=q, answer=a, sort_order=_order())); db.session.commit(); flash("سوال جدید ذخیره شد.", "success")
+            else:
+                try:
+                    f = db.session.get(Faq, int(request.form.get("id", 0)))
+                except ValueError:
+                    f = None
+                if f and action == "delete":
+                    db.session.delete(f); db.session.commit(); flash("سوال حذف شد.", "success")
+                elif f and action == "toggle":
+                    f.is_published = not f.is_published; db.session.commit()
+                    flash("سوال منتشر شد." if f.is_published else "سوال از ربات مخفی شد.", "success")
+                elif f and action == "edit":
+                    q = request.form.get("question", "").strip(); a = request.form.get("answer", "").strip()
+                    if q and a:
+                        f.question = q; f.answer = a; f.sort_order = _order(); db.session.commit(); flash("تغییرات ذخیره شد.", "success")
             return redirect(url_for("faq_page"))
-        return render_template("faq.html", faqs=Faq.query.order_by(Faq.id.desc()).all())
+        return render_template("faq.html", faqs=Faq.query.order_by(Faq.sort_order.asc(), Faq.id.desc()).all())
+
+    @app.route("/admin/canned", methods=["GET", "POST"])
+    @login_required
+    def canned_page():
+        if request.method == "POST":
+            action = request.form.get("action")
+            title = request.form.get("title", "").strip(); body = request.form.get("body", "").strip()
+            if action == "add":
+                if title and body:
+                    db.session.add(CannedResponse(title=title, body=body, keywords=request.form.get("keywords", "").strip())); db.session.commit(); flash("پاسخ آماده ذخیره شد.", "success")
+            else:
+                try:
+                    c = db.session.get(CannedResponse, int(request.form.get("id", 0)))
+                except ValueError:
+                    c = None
+                if c and action == "delete":
+                    db.session.delete(c); db.session.commit(); flash("پاسخ آماده حذف شد.", "success")
+                elif c and action == "toggle":
+                    c.is_active = not c.is_active; db.session.commit()
+                elif c and action == "edit" and title and body:
+                    c.title = title; c.body = body; c.keywords = request.form.get("keywords", "").strip(); db.session.commit(); flash("تغییرات ذخیره شد.", "success")
+            return redirect(url_for("canned_page"))
+        return render_template("canned.html", items=CannedResponse.query.order_by(CannedResponse.id.desc()).all())
 
     @app.route("/admin/gemini", methods=["GET", "POST"])
     @login_required
@@ -1195,13 +1367,33 @@ def create_app():
         if request.method == "POST":
             action = request.form.get("action")
             if action == "add":
-                key = request.form.get("api_key", "").strip()
-                if key: db.session.add(GeminiKey(api_key=key, label=request.form.get("label", "").strip() or f"کلید {key[:6]}***")); db.session.commit()
-            elif action == "delete":
-                k = db.session.get(GeminiKey, int(request.form.get("id", 0)))
-                if k: db.session.delete(k); db.session.commit()
+                added = 0
+                label = request.form.get("label", "").strip()
+                for key in [x.strip() for x in request.form.get("api_key", "").splitlines() if x.strip()]:
+                    db.session.add(GeminiKey(api_key=key, label=label or f"کلید {key[:6]}***")); added += 1
+                db.session.commit()
+                flash(f"{added} کلید اضافه شد." if added else "کلیدی وارد نشده بود.", "success" if added else "error")
+            else:
+                try:
+                    k = db.session.get(GeminiKey, int(request.form.get("id", 0)))
+                except ValueError:
+                    k = None
+                if k and action == "delete":
+                    db.session.delete(k); db.session.commit(); flash("کلید حذف شد.", "success")
+                elif k and action == "toggle":
+                    k.is_active = not k.is_active; db.session.commit()
+                    flash("کلید فعال شد." if k.is_active else "کلید غیرفعال شد.", "success")
+                elif k and action == "reset":
+                    k.is_exhausted = False; k.exhausted_until = None; db.session.commit(); flash("وضعیت مصرف‌شده پاک شد.", "success")
+                elif k and action == "edit":
+                    k.label = request.form.get("label", "").strip() or k.label
+                    try:
+                        k.priority = int(request.form.get("priority", 0) or 0)
+                    except ValueError:
+                        pass
+                    db.session.commit(); flash("تغییرات ذخیره شد.", "success")
             return redirect(url_for("gemini_page"))
-        return render_template("gemini.html", keys=GeminiKey.query.order_by(GeminiKey.priority.asc(), GeminiKey.id.desc()).all())
+        return render_template("gemini.html", keys=GeminiKey.query.order_by(GeminiKey.priority.asc(), GeminiKey.id.desc()).all(), env_key=bool(os.environ.get("GEMINI_API_KEY", "").strip()), model=get_setting("GEMINI_MODEL"), ai_on=get_setting("AI_ENABLED") in ("true", "1", "True"))
 
     @app.route("/admin/admins", methods=["GET", "POST"])
     @login_required
@@ -1210,13 +1402,71 @@ def create_app():
             action = request.form.get("action")
             if action == "add":
                 cid = request.form.get("chat_id", "").strip()
-                if cid.isdigit() and not BaleAdmin.query.filter_by(chat_id=cid).first():
-                    db.session.add(BaleAdmin(chat_id=cid, display_name=request.form.get("display_name", "").strip())); db.session.commit()
-            elif action == "delete":
-                a = db.session.get(BaleAdmin, int(request.form.get("id", 0)))
-                if a: db.session.delete(a); db.session.commit()
+                if not cid.isdigit():
+                    flash("Chat ID باید فقط عدد باشد.", "error")
+                elif cid in env_admin_ids() or BaleAdmin.query.filter_by(chat_id=cid).first():
+                    flash("این شناسه قبلاً به‌عنوان ادمین ثبت شده است.", "error")
+                else:
+                    db.session.add(BaleAdmin(chat_id=cid, display_name=request.form.get("display_name", "").strip())); db.session.commit(); flash("ادمین جدید اضافه شد.", "success")
+            else:
+                try:
+                    a = db.session.get(BaleAdmin, int(request.form.get("id", 0)))
+                except ValueError:
+                    a = None
+                if a and action == "delete":
+                    db.session.delete(a); db.session.commit(); flash("ادمین حذف شد.", "success")
+                elif a and action == "edit":
+                    a.display_name = request.form.get("display_name", "").strip(); db.session.commit(); flash("نام ادمین به‌روزرسانی شد.", "success")
             return redirect(url_for("admins_page"))
         return render_template("admins.html", admins=BaleAdmin.query.order_by(BaleAdmin.id.desc()).all(), env_admins=sorted(env_admin_ids()))
+
+    @app.route("/admin/team", methods=["GET", "POST"])
+    @login_required
+    def team_page():
+        me = session.get("panel_user_id")
+        if request.method == "POST":
+            action = request.form.get("action")
+            if action == "add":
+                un = request.form.get("username", "").strip(); pw = request.form.get("password", "")
+                if not re.match(r"^[A-Za-z0-9_.-]{3,64}$", un):
+                    flash("نام کاربری باید ۳ تا ۶۴ کاراکتر انگلیسی/عدد باشد.", "error")
+                elif len(pw) < 8:
+                    flash("رمز عبور حداقل ۸ کاراکتر باشد.", "error")
+                elif PanelUser.query.filter_by(username=un).first():
+                    flash("این نام کاربری قبلاً وجود دارد.", "error")
+                else:
+                    db.session.add(PanelUser(username=un, password_hash=generate_password_hash(pw))); db.session.commit(); flash("کاربر پنل ساخته شد.", "success")
+            elif action == "change_own":
+                user = db.session.get(PanelUser, me)
+                new = request.form.get("new_password", "")
+                if not user or not check_password_hash(user.password_hash, request.form.get("current_password", "")):
+                    flash("رمز فعلی درست نیست.", "error")
+                elif len(new) < 8:
+                    flash("رمز جدید حداقل ۸ کاراکتر باشد.", "error")
+                elif new != request.form.get("confirm_password", ""):
+                    flash("تکرار رمز جدید با آن یکسان نیست.", "error")
+                else:
+                    user.password_hash = generate_password_hash(new); db.session.commit(); flash("رمز عبور شما تغییر کرد.", "success")
+            else:
+                try:
+                    user = db.session.get(PanelUser, int(request.form.get("id", 0)))
+                except ValueError:
+                    user = None
+                if user and action == "delete":
+                    if user.id == me:
+                        flash("نمی‌توانید حساب خودتان را حذف کنید.", "error")
+                    elif PanelUser.query.count() <= 1:
+                        flash("حداقل یک کاربر باید باقی بماند.", "error")
+                    else:
+                        db.session.delete(user); db.session.commit(); flash("کاربر حذف شد.", "success")
+                elif user and action == "reset":
+                    pw = request.form.get("password", "")
+                    if len(pw) < 8:
+                        flash("رمز جدید حداقل ۸ کاراکتر باشد.", "error")
+                    else:
+                        user.password_hash = generate_password_hash(pw); db.session.commit(); flash("رمز عبور کاربر تغییر کرد.", "success")
+            return redirect(url_for("team_page"))
+        return render_template("team.html", users=PanelUser.query.order_by(PanelUser.id.asc()).all(), me=me)
 
     @app.route("/admin/broadcast", methods=["GET", "POST"])
     @login_required
@@ -1232,7 +1482,7 @@ def create_app():
                 db.session.add(Broadcast(body=body, sent_count=sent, failed_count=failed)); db.session.commit()
                 flash(f"ارسال انجام شد: {sent} موفق، {failed} ناموفق.", "success")
             return redirect(url_for("broadcast_page"))
-        return render_template("broadcast.html", broadcasts=Broadcast.query.order_by(Broadcast.id.desc()).limit(30).all())
+        return render_template("broadcast.html", broadcasts=Broadcast.query.order_by(Broadcast.id.desc()).limit(30).all(), recipients=BaleUser.query.filter_by(is_blocked=False).count())
 
     @app.route("/admin/settings", methods=["GET", "POST"])
     @login_required

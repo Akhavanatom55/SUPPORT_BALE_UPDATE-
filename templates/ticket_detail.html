@@ -1,13 +1,33 @@
 {% extends 'base.html' %}
 {% block title %}تیکت #{{ ticket.id }}{% endblock %}
-{% block content %}
-<div class="topbar"><div><h1>تیکت #{{ ticket.id }}</h1><p class="muted">{{ ticket.user_name }} — {{ ticket.user_chat_id }}</p></div><a href="{{ url_for('tickets_page') }}">← بازگشت</a></div>
+{% block content %}{% from '_ui.html' import icon, head %}
+{% call head('تیکت #' ~ ticket.id, ticket.user_name ~ ' — ' ~ ticket.user_chat_id) %}
+<a class="btn ghost" href="{{ url_for('tickets_page') }}">بازگشت به تیکت‌ها</a>
+{% endcall %}
+<div class="grid-2 wide-left">
 <section class="panel">
-  <div class="conversation">{% for m in messages %}<div class="message {{ m.sender }}"><div class="meta">{{ m.sender_name or m.sender }} · {{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</div><div>{{ m.body }}</div></div>{% endfor %}</div>
-  <form method="post" action="{{ url_for('tickets_page') }}" class="stack">
-    <input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="action" value="reply">
-    <label>پاسخ<textarea name="body" rows="4" required></textarea></label><button>ارسال پاسخ به کاربر</button>
+  <div class="conversation">{% for m in messages %}<div class="message {{ m.sender }}"><div class="meta">{{ m.sender_name or m.sender }} · {{ m.created_at|tehran }}</div><div class="bubble">{{ m.body }}</div></div>{% endfor %}</div>
+  {% if ticket.status != 'closed' %}
+  <form method="post" action="{{ url_for('tickets_page') }}" class="stack reply-box">
+    <input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="action" value="reply"><input type="hidden" name="back" value="detail">
+    <label>پاسخ شما به کاربر<textarea id="reply-body" name="body" rows="5" required placeholder="متن پاسخ را بنویسید…"></textarea></label>
+    {% if canned %}<div class="canned-row"><small class="muted">درج پاسخ آماده:</small>{% for c in canned %}<button type="button" class="chip-btn" data-insert-target="reply-body" data-text="{{ c.body }}">{{ c.title }}</button>{% endfor %}</div>{% endif %}
+    <div class="actions"><button class="btn primary">{{ icon('send', 18) }}ارسال پاسخ به کاربر</button></div>
   </form>
-  <div class="actions"><form method="post" action="{{ url_for('tickets_page') }}"><input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="action" value="toggle_ai"><button class="ghost">{{ 'خاموش کردن AI' if ticket.ai_enabled else 'روشن کردن AI' }}</button></form><form method="post" action="{{ url_for('tickets_page') }}"><input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="action" value="close"><button class="danger-btn">بستن تیکت</button></form></div>
+  {% else %}<p class="muted note">این تیکت بسته است. برای پاسخ‌دادن ابتدا آن را دوباره باز کنید.</p>{% endif %}
 </section>
+<aside class="panel side-card">
+  <div class="panel-head"><h2>اطلاعات تیکت</h2></div>
+  <dl class="kv"><dt>وضعیت</dt><dd><span class="status {{ ticket.status }}">{{ ticket.status|status_fa }}</span></dd><dt>ثبت</dt><dd>{{ ticket.created_at|tehran }}</dd><dt>آخرین تغییر</dt><dd>{{ ticket.updated_at|tehran }}</dd><dt>دستیار هوشمند</dt><dd>{{ 'روشن' if ticket.ai_enabled else 'خاموش' }}</dd><dt>امتیاز کاربر</dt><dd>{% if ticket.rating %}{{ ticket.rating }} از ۵{% else %}—{% endif %}</dd></dl>
+  <div class="stack">
+    <form method="post" action="{{ url_for('tickets_page') }}"><input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="back" value="detail"><input type="hidden" name="action" value="toggle_ai"><button class="btn secondary block">{{ icon('spark', 18) }}{{ 'خاموش کردن AI' if ticket.ai_enabled else 'روشن کردن AI' }}</button></form>
+    {% if ticket.status == 'closed' %}
+    <form method="post" action="{{ url_for('tickets_page') }}"><input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="back" value="detail"><input type="hidden" name="action" value="reopen"><button class="btn success block">{{ icon('refresh', 18) }}بازکردن دوباره</button></form>
+    {% else %}
+    <form method="post" action="{{ url_for('tickets_page') }}" data-confirm="تیکت بسته می‌شود و پاسخ‌دادن به آن متوقف خواهد شد."><input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="back" value="detail"><input type="hidden" name="action" value="close"><button class="btn success block">{{ icon('check', 18) }}بستن تیکت</button></form>
+    {% endif %}
+    <form method="post" action="{{ url_for('tickets_page') }}" data-confirm="تیکت و همه پیام‌هایش برای همیشه حذف می‌شود."><input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="action" value="delete"><button class="btn danger block">{{ icon('trash', 18) }}حذف تیکت</button></form>
+  </div>
+</aside>
+</div>
 {% endblock %}

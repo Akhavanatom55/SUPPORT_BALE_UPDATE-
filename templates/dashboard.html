@@ -1,47 +1,68 @@
 {% extends 'base.html' %}
 {% block title %}داشبورد{% endblock %}
-{% block content %}
-<div class="topbar"><div><h1>داشبورد</h1><p class="muted">خلاصه وضعیت سیستم</p></div><a class="button" href="{{ url_for('settings_page') }}">تنظیمات</a></div>
+{% block content %}{% from '_ui.html' import icon, empty, head %}
+{% call head('داشبورد', 'خلاصه وضعیت پشتیبانی و ربات') %}
+<a class="btn secondary" href="{{ url_for('tickets_page', status='open') }}">{{ icon('ticket', 18) }}تیکت‌های باز</a>
+<a class="btn primary" href="{{ url_for('settings_page') }}">{{ icon('gear', 18) }}تنظیمات</a>
+{% endcall %}
 <div class="stats">
-  <div class="stat"><span>کاربران بله</span><b data-count="{{ counts.users }}">0</b></div>
-  <div class="stat"><span>تیکت‌های باز</span><b data-count="{{ counts.open }}">0</b></div>
-  <div class="stat"><span>FAQ فعال</span><b data-count="{{ counts.faq }}">0</b></div>
-  <div class="stat"><span>ادمین‌ها</span><b data-count="{{ counts.admins }}">0</b></div>
+  <a class="stat" style="--a:#fbbf24" href="{{ url_for('tickets_page', status='open') }}"><i class="si">{{ icon('ticket', 22) }}</i><span>تیکت‌های باز</span><b data-count="{{ counts.open }}">0</b><small>{{ counts.answered }} پاسخ داده شده · {{ counts.closed }} بسته</small></a>
+  <div class="stat" style="--a:#4f8cff"><i class="si">{{ icon('clock', 22) }}</i><span>تیکت‌های امروز</span><b data-count="{{ today }}">0</b><small>مجموع تیکت‌ها: {{ counts.total }}</small></div>
+  <a class="stat" style="--a:#22d3ee" href="{{ url_for('users_page') }}"><i class="si">{{ icon('users', 22) }}</i><span>کاربران بله</span><b data-count="{{ counts.users }}">0</b><small>{{ counts.blocked }} کاربر مسدود</small></a>
+  <a class="stat" style="--a:#34d399" href="{{ url_for('faq_page') }}"><i class="si">{{ icon('help', 22) }}</i><span>سوالات متداول فعال</span><b data-count="{{ counts.faq }}">0</b><small>نمایش‌داده‌شده در ربات</small></a>
+  <a class="stat" style="--a:#a78bfa" href="{{ url_for('gemini_page') }}"><i class="si">{{ icon('spark', 22) }}</i><span>کلیدهای Gemini فعال</span><b data-count="{{ counts.gemini_keys }}">0</b><small>چرخش خودکار کلید</small></a>
+  <a class="stat" style="--a:#e8b86a" href="{{ url_for('admins_page') }}"><i class="si">{{ icon('shield', 22) }}</i><span>ادمین‌های ربات</span><b data-count="{{ counts.admins }}">0</b><small>{% if avg_rating %}میانگین رضایت: {{ avg_rating }} از ۵{% else %}هنوز امتیازی ثبت نشده{% endif %}</small></a>
 </div>
-<section class="panel neon-border" id="botpanel">
-  <div class="panel-head"><h2>🤖 وضعیت ربات بله</h2></div>
+
+<div class="grid-2 wide-left">
+  <section class="panel">
+    <div class="panel-head"><h2>تیکت‌های ۷ روز اخیر</h2></div>
+    <div class="bars">{% for s in series %}<div class="bar"><b>{{ s.count }}</b><i style="--h:{{ s.pct }};--d:{{ loop.index0 }}"></i><span>{{ s.label }}</span></div>{% endfor %}</div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>توزیع وضعیت</h2></div>
+    {% set tot = counts.total or 1 %}
+    <div class="meter-row"><span>باز</span><div class="meter warn"><i style="--w:{{ (counts.open/tot*100)|round }}"></i></div><b>{{ counts.open }}</b></div>
+    <div class="meter-row"><span>پاسخ داده شده</span><div class="meter ok"><i style="--w:{{ (counts.answered/tot*100)|round }}"></i></div><b>{{ counts.answered }}</b></div>
+    <div class="meter-row"><span>بسته</span><div class="meter mute"><i style="--w:{{ (counts.closed/tot*100)|round }}"></i></div><b>{{ counts.closed }}</b></div>
+  </section>
+</div>
+
+<section class="panel glow" id="botpanel">
+  <div class="panel-head"><h2>وضعیت اتصال ربات بله</h2><button type="button" class="btn ghost sm" id="botrefresh">{{ icon('refresh', 16) }}بررسی دوباره</button></div>
   <div id="botstat" class="status-grid"><span class="muted">در حال بررسی اتصال…</span></div>
-  <div class="actions" style="margin-top:14px">
-    <form method="post" action="{{ url_for('webhook_manage') }}"><input type="hidden" name="action" value="set"><button>🔗 ثبت / بروزرسانی وبهوک</button></form>
-    <form method="post" action="{{ url_for('bot_test') }}"><button class="ghost">📨 ارسال پیام تست به ادمین‌ها</button></form>
-    <a class="button ghost" href="{{ url_for('settings_page') }}">🔑 تغییر توکن</a>
-    <button type="button" class="ghost" id="botrefresh">🔄 بررسی دوباره</button>
+  <div class="actions mt">
+    <form method="post" action="{{ url_for('webhook_manage') }}"><input type="hidden" name="action" value="set"><button class="btn primary">{{ icon('link', 18) }}ثبت / به‌روزرسانی وبهوک</button></form>
+    <form method="post" action="{{ url_for('bot_test') }}"><button class="btn secondary">{{ icon('send', 18) }}ارسال پیام آزمایشی به ادمین‌ها</button></form>
+    <a class="btn ghost" href="{{ url_for('settings_page') }}">{{ icon('key', 18) }}تغییر توکن</a>
   </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2>آخرین تیکت‌ها</h2><a class="btn ghost sm" href="{{ url_for('tickets_page') }}">همه تیکت‌ها</a></div>
+  <div class="table-wrap"><table><thead><tr><th>شماره</th><th>کاربر</th><th>موضوع</th><th>وضعیت</th><th>زمان</th><th></th></tr></thead><tbody>
+  {% for t in recent %}<tr><td class="num">#{{ t.id }}</td><td>{{ t.user_name }}</td><td class="clip">{{ t.subject }}</td><td><span class="status {{ t.status }}">{{ t.status|status_fa }}</span></td><td class="muted nowrap">{{ t.created_at|tehran }}</td><td class="end"><a class="btn ghost sm" href="{{ url_for('ticket_detail', ticket_id=t.id) }}">مشاهده</a></td></tr>
+  {% else %}<tr><td colspan="6">{{ empty('هنوز تیکتی ثبت نشده', 'وقتی کاربران در ربات پیام بدهند اینجا نمایش داده می‌شود.') }}</td></tr>{% endfor %}
+  </tbody></table></div>
 </section>
 <script>
 (function(){
 var box=document.getElementById('botstat');
-function chip(ok,label,val){var d=document.createElement('div');d.className='chip '+(ok?'ok':'bad');var b=document.createElement('b');b.textContent=(ok?'● ':'● ')+label;var s=document.createElement('span');s.textContent=val||'';d.appendChild(b);d.appendChild(s);return d}
+function chip(state,label,val){var d=document.createElement('div');d.className='chip '+state;var b=document.createElement('b');b.textContent=label;var s=document.createElement('span');s.textContent=val||'';d.appendChild(b);d.appendChild(s);return d}
 function load(){box.textContent='در حال بررسی…';
 fetch('{{ url_for("webhook_status") }}',{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
 box.textContent='';
-box.appendChild(chip(d.token_configured,'توکن ربات',d.token_configured?('منبع: '+({panel:'پنل',env:'Environment',database:'دیتابیس'}[d.token_source]||d.token_source)+' · شناسه ربات: '+d.token_bot_id):'BALE_BOT_TOKEN خالی است'));
-box.appendChild(chip(d.bot_ok,'اتصال به بله',d.bot_ok?('@'+(d.bot_username||'bot')):((d.bot_error||'خطا')+' — توکن نامعتبر یا باطل شده؛ در تنظیمات توکن جدید را وارد کنید')));
-box.appendChild(chip(d.webhook_registered,'وبهوک',d.webhook_registered?'ثبت شده':(d.webhook_is_set?'روی آدرس دیگری ثبت است':'ثبت نشده')));
-box.appendChild(chip(d.admins_count>0,'ادمین‌ها',d.admins_count>0?(d.admins_count+' نفر'):'ADMIN_IDS تعریف نشده'));
-box.appendChild(chip(!!d.last_update_at,'آخرین پیام دریافتی',d.last_update_at||'هنوز پیامی نرسیده'));
-var dbc=chip(d.database_persistent,'دیتابیس',(d.database_kind||'')+(d.database_persistent?'':' — موقت! با ریستارت پاک می‌شود؛ DATABASE_URL (PostgreSQL) تنظیم کنید'));if(!d.database_persistent)dbc.className='chip warn';box.appendChild(dbc);
-if(d.webhook_last_error)box.appendChild(chip(false,'خطای وبهوک (بله)',d.webhook_last_error));
-if(d.last_api_error)box.appendChild(chip(false,'آخرین خطای API',d.last_api_error));
-if(d.last_error)box.appendChild(chip(false,'آخرین خطای پردازش','جزئیات در لاگ سرور'));
+box.appendChild(chip(d.token_configured?'ok':'bad','توکن ربات',d.token_configured?('منبع: '+({panel:'پنل',env:'Environment',database:'دیتابیس'}[d.token_source]||d.token_source)+' · شناسه ربات: '+d.token_bot_id):'توکن ربات تنظیم نشده است'));
+box.appendChild(chip(d.bot_ok?'ok':'bad','اتصال به بله',d.bot_ok?('@'+(d.bot_username||'bot')):((d.bot_error||'خطا')+' — توکن نامعتبر یا باطل شده؛ در تنظیمات توکن جدید را وارد کنید')));
+box.appendChild(chip(d.webhook_registered?'ok':'bad','وبهوک',d.webhook_registered?'ثبت شده':(d.webhook_is_set?'روی آدرس دیگری ثبت است':'ثبت نشده')));
+box.appendChild(chip(d.admins_count>0?'ok':'bad','ادمین‌ها',d.admins_count>0?(d.admins_count+' نفر'):'هیچ ادمینی تعریف نشده'));
+box.appendChild(chip(d.last_update_at?'ok':'warn','آخرین پیام دریافتی',d.last_update_at||'هنوز پیامی نرسیده'));
+box.appendChild(chip(d.database_persistent?'ok':'warn','دیتابیس',(d.database_kind||'')+(d.database_persistent?'':' — موقت است؛ برای نگهداری دائمی DATABASE_URL (PostgreSQL) تنظیم کنید')));
+if(d.webhook_last_error)box.appendChild(chip('bad','خطای وبهوک (بله)',d.webhook_last_error));
+if(d.last_api_error)box.appendChild(chip('bad','آخرین خطای API',d.last_api_error));
+if(d.last_error)box.appendChild(chip('bad','آخرین خطای پردازش','جزئیات در لاگ سرور'));
 }).catch(function(){box.textContent='خطا در دریافت وضعیت'})}
 document.getElementById('botrefresh').addEventListener('click',load);load();
 })();
 </script>
-<section class="panel">
-  <div class="panel-head"><h2>آخرین تیکت‌ها</h2><a href="{{ url_for('tickets_page') }}">همه</a></div>
-  <div class="table-wrap"><table><thead><tr><th>#</th><th>کاربر</th><th>موضوع</th><th>وضعیت</th><th></th></tr></thead><tbody>
-  {% for t in recent %}<tr><td>{{ t.id }}</td><td>{{ t.user_name }}</td><td>{{ t.subject }}</td><td><span class="status {{ t.status }}">{{ t.status }}</span></td><td><a href="{{ url_for('ticket_detail', ticket_id=t.id) }}">مشاهده</a></td></tr>{% else %}<tr><td colspan="5" class="muted">تیکتی وجود ندارد.</td></tr>{% endfor %}
-  </tbody></table></div>
-</section>
 {% endblock %}

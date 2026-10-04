@@ -1,3 +1,31 @@
 {% extends 'base.html' %}
 {% block title %}Gemini{% endblock %}
-{% block content %}<h1>مدیریت کلید Gemini</h1><div class="grid-2"><section class="panel"><h2>افزودن کلید</h2><form method="post" class="stack"><input type="hidden" name="action" value="add"><label>API Key<input name="api_key" required></label><label>برچسب<input name="label" placeholder="کلید اصلی"></label><button>افزودن</button></form><p class="muted">همچنین می‌توانی GEMINI_API_KEY را به‌صورت Environment Variable تنظیم کنی.</p></section><section class="panel"><h2>کلیدهای ذخیره‌شده</h2>{% for k in keys %}<div class="list-row"><div><b>{{ k.label or ('کلید #' ~ k.id) }}</b><div class="muted">{{ k.api_key[:7] }}… · {{ 'غیرفعال/مصرف‌شده' if k.is_exhausted else 'فعال' }}</div></div><form method="post"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ k.id }}"><button class="small danger-btn">حذف</button></form></div>{% else %}<p class="muted">کلیدی اضافه نشده.</p>{% endfor %}</section></div>{% endblock %}
+{% block content %}{% from '_ui.html' import icon, empty, head %}
+{% call head('دستیار هوشمند Gemini', 'مدیریت کلیدهای API و چرخش خودکار بین آن‌ها') %}
+<span class="badge {{ 'live' if ai_on else '' }}"><i></i>{{ 'دستیار فعال' if ai_on else 'دستیار خاموش' }}</span>
+<a class="btn secondary" href="{{ url_for('settings_page') }}">{{ icon('gear', 18) }}مدل و پرامپت</a>
+{% endcall %}
+<div class="grid-2">
+<section class="panel"><div class="panel-head"><h2>افزودن کلید</h2></div>
+  <form method="post" class="stack"><input type="hidden" name="action" value="add">
+    <label>API Key<textarea name="api_key" rows="4" required dir="ltr" placeholder="AIza…"></textarea><small class="hint">برای افزودن چند کلید، هر کلید را در یک خط بنویسید.</small></label>
+    <label>برچسب (اختیاری)<input name="label" placeholder="کلید اصلی"></label>
+    <button class="btn primary">{{ icon('plus', 18) }}افزودن</button>
+  </form>
+  <div class="info-line"><b>مدل فعلی:</b> <span dir="ltr">{{ model }}</span></div>
+  {% if env_key %}<div class="info-line ok">یک کلید از Environment Variable (GEMINI_API_KEY) هم فعال است.</div>{% endif %}
+</section>
+<section class="panel"><div class="panel-head"><h2>کلیدهای ذخیره‌شده ({{ keys|length }})</h2></div>
+  {% for k in keys %}<div class="list-row {{ 'off' if not k.is_active }}">
+    <div class="grow"><b>{{ k.label or ('کلید #' ~ k.id) }}</b><div class="muted" dir="ltr">{{ k.api_key|mask_key }}</div>
+      <small class="muted">اولویت {{ k.priority }} · {% if not k.is_active %}غیرفعال{% elif k.is_exhausted %}سقف مصرف پر شده{% else %}آماده استفاده{% endif %}{% if k.last_used_at %} · آخرین استفاده {{ k.last_used_at|tehran }}{% endif %}</small></div>
+    <div class="row-actions">
+      {% if k.is_exhausted %}<form method="post"><input type="hidden" name="action" value="reset"><input type="hidden" name="id" value="{{ k.id }}"><button class="btn secondary sm">{{ icon('refresh', 16) }}بازنشانی</button></form>{% endif %}
+      <form method="post"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ k.id }}"><button class="btn {{ 'success' if k.is_active else 'ghost' }} sm">{{ 'فعال' if k.is_active else 'غیرفعال' }}</button></form>
+      <button type="button" class="btn secondary sm icon-only" title="ویرایش" data-dialog="key-{{ k.id }}">{{ icon('edit', 16) }}</button>
+      <form method="post" data-confirm="این کلید حذف شود؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ k.id }}"><button class="btn danger sm icon-only" title="حذف">{{ icon('trash', 16) }}</button></form>
+    </div>
+    <dialog id="key-{{ k.id }}"><form method="post"><div class="dlg-body stack"><h3>ویرایش کلید</h3><input type="hidden" name="action" value="edit"><input type="hidden" name="id" value="{{ k.id }}"><label>برچسب<input name="label" value="{{ k.label }}"></label><label>اولویت<input name="priority" type="number" value="{{ k.priority }}" dir="ltr"><small class="hint">عدد کوچک‌تر زودتر استفاده می‌شود.</small></label></div><div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button class="btn primary">ذخیره تغییرات</button></div></form></dialog>
+  </div>{% else %}{{ empty('کلیدی اضافه نشده', 'بدون کلید، پاسخ خودکار انجام نمی‌شود.') }}{% endfor %}
+</section></div>
+{% endblock %}

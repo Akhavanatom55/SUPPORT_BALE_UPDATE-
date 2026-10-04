@@ -1,3 +1,22 @@
 {% extends 'base.html' %}
-{% block title %}ادمین‌ها{% endblock %}
-{% block content %}<h1>ادمین‌های ربات بله</h1><div class="grid-2"><section class="panel"><h2>افزودن ادمین</h2><form method="post" class="stack"><input type="hidden" name="action" value="add"><label>Chat ID عددی<input name="chat_id" inputmode="numeric" pattern="[0-9]+" required></label><label>نام نمایشی<input name="display_name"></label><button>افزودن</button></form><p class="muted">ADMIN_IDS داخل Environment هم همیشه ادمین باقی می‌ماند.</p></section><section class="panel"><h2>لیست</h2>{% for aid in env_admins %}<div class="list-row"><b>{{ aid }}</b><span class="badge">ENV</span></div>{% endfor %}{% for a in admins %}<div class="list-row"><div><b>{{ a.display_name or a.chat_id }}</b><div class="muted">{{ a.chat_id }}</div></div><form method="post"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ a.id }}"><button class="small danger-btn">حذف</button></form></div>{% else %}{% if not env_admins %}<p class="muted">ادمینی ثبت نشده.</p>{% endif %}{% endfor %}</section></div>{% endblock %}
+{% block title %}ادمین‌های ربات{% endblock %}
+{% block content %}{% from '_ui.html' import icon, empty, head %}
+{{ head('ادمین‌های ربات بله', 'افرادی که اعلان تیکت می‌گیرند و به منوی مدیریت ربات دسترسی دارند') }}
+<div class="grid-2">
+<section class="panel"><div class="panel-head"><h2>افزودن ادمین</h2></div>
+  <form method="post" class="stack"><input type="hidden" name="action" value="add">
+    <label>شناسه عددی بله (Chat ID)<input name="chat_id" inputmode="numeric" pattern="[0-9]+" required dir="ltr"></label>
+    <label>نام نمایشی<input name="display_name"></label>
+    <button class="btn primary">{{ icon('plus', 18) }}افزودن ادمین</button>
+  </form>
+  <p class="muted note">ادمین باید یک‌بار در ربات /start بزند تا بتواند پیام دریافت کند. شناسه‌های ADMIN_IDS در Environment همیشه ادمین باقی می‌مانند.</p></section>
+<section class="panel"><div class="panel-head"><h2>فهرست ادمین‌ها</h2></div>
+  {% for aid in env_admins %}<div class="list-row"><div class="grow"><b dir="ltr">{{ aid }}</b><div class="muted">تعریف‌شده در Environment</div></div><span class="badge">ENV</span></div>{% endfor %}
+  {% for a in admins %}<div class="list-row"><div class="grow"><b>{{ a.display_name or a.chat_id }}</b><div class="muted" dir="ltr">{{ a.chat_id }}</div></div>
+    <div class="row-actions"><button type="button" class="btn secondary sm icon-only" title="ویرایش نام" data-dialog="adm-{{ a.id }}">{{ icon('edit', 16) }}</button>
+    <form method="post" data-confirm="این ادمین حذف شود؟"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ a.id }}"><button class="btn danger sm icon-only" title="حذف">{{ icon('trash', 16) }}</button></form></div>
+    <dialog id="adm-{{ a.id }}"><form method="post"><div class="dlg-body stack"><h3>ویرایش نام ادمین</h3><input type="hidden" name="action" value="edit"><input type="hidden" name="id" value="{{ a.id }}"><label>نام نمایشی<input name="display_name" value="{{ a.display_name }}"></label></div><div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button class="btn primary">ذخیره</button></div></form></dialog></div>
+  {% endfor %}
+  {% if not env_admins and not admins %}{{ empty('ادمینی ثبت نشده', 'بدون ادمین، اعلان تیکت‌ها برای کسی ارسال نمی‌شود.') }}{% endif %}
+</section></div>
+{% endblock %}

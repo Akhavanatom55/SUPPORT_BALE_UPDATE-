@@ -1,27 +1,24 @@
 {% extends 'base.html' %}
 {% block title %}{{ settings.ORGANIZATION_NAME or 'ربات پشتیبانی' }}{% endblock %}
-{% block content %}
+{% block content %}{% from '_ui.html' import icon %}
 <div class="home-wrap">
 <section class="hero">
-  <div>
-    <span class="badge">ONLINE</span>
+  <div class="hero-text">
+    <span class="badge live"><i></i>سامانه فعال</span>
     <h1>{{ settings.BOT_NAME or 'ربات پشتیبانی' }}</h1>
-    <p>سامانه یکپارچه پشتیبانی؛ مدیریت تیکت، سوالات متداول، دستیار هوشمند و ربات بله — همه در یک پنل.</p>
-    <div class="actions"><a class="button" href="{{ url_for('login') }}">🚀 ورود به پنل مدیریت</a><a class="button ghost" href="{{ url_for('health') }}">Health Check</a></div>
+    <p>مدیریت یکپارچه تیکت‌ها، سوالات متداول، دستیار هوشمند و ربات بله؛ همه در یک پنل سازمانی.</p>
+    <div class="actions"><a class="btn primary lg" href="{{ url_for('login') }}">{{ icon('lock', 18) }}ورود به پنل مدیریت</a><a class="btn ghost lg" href="{{ url_for('health') }}">وضعیت سرویس</a></div>
   </div>
-  <div class="hero-box">
-    <div>
-      <div class="orbit"><div class="r r1"><b>💬</b></div><div class="r r2"><b>🤖</b></div><div class="r r3"><b>🎫</b></div><div class="core"></div></div>
-      <div class="cap"><b>مرکز فرماندهی پشتیبانی</b><span>Bale · Gemini AI · Tickets</span></div>
-    </div>
+  <div class="hero-box glow">
+    <div class="orbit"><div class="r r1"><b>{{ icon('reply', 18) }}</b></div><div class="r r2"><b>{{ icon('spark', 18) }}</b></div><div class="r r3"><b>{{ icon('ticket', 18) }}</b></div><div class="core">{{ icon('bot', 30) }}</div></div>
+    <div class="cap"><b>مرکز فرماندهی پشتیبانی</b><span>بله · Gemini · تیکت</span></div>
   </div>
 </section>
 <section class="features">
-  <div class="feature" style="--fh:190"><div class="fi">💬</div><h3>ربات بله</h3><p>کاربران درخواست‌شان را مستقیم در بله می‌نویسند.</p></div>
-  <div class="feature" style="--fh:320"><div class="fi">🔔</div><h3>اعلان به ادمین‌ها و گروه</h3><p>هر درخواست فوری برای ادمین‌ها و گروه پشتیبانی ارسال می‌شود.</p></div>
-  <div class="feature" style="--fh:45"><div class="fi">✨</div><h3>دستیار Gemini</h3><p>پاسخ خودکار هوشمند با چرخش کلیدها.</p></div>
-  <div class="feature" style="--fh:150"><div class="fi">🛡️</div><h3>پنل مدیریت وب</h3><p>تیکت، FAQ، پیام همگانی و پشتیبان‌گیری.</p></div>
+  <div class="feature" style="--a:#4f8cff"><div class="fi">{{ icon('reply', 22) }}</div><h3>ربات بله</h3><p>کاربران درخواست‌شان را مستقیم در بله ثبت می‌کنند.</p></div>
+  <div class="feature" style="--a:#fbbf24"><div class="fi">{{ icon('megaphone', 22) }}</div><h3>اعلان فوری</h3><p>هر درخواست برای ادمین‌ها و گروه پشتیبانی ارسال می‌شود.</p></div>
+  <div class="feature" style="--a:#a78bfa"><div class="fi">{{ icon('spark', 22) }}</div><h3>دستیار Gemini</h3><p>پاسخ خودکار هوشمند با چرخش خودکار کلیدها.</p></div>
+  <div class="feature" style="--a:#34d399"><div class="fi">{{ icon('shield', 22) }}</div><h3>پنل مدیریت</h3><p>تیکت، کاربران، FAQ، پیام همگانی و پشتیبان‌گیری.</p></div>
 </section>
-<div class="marquee"><div><span>● Bale Bot</span><span>● Support Tickets</span><span>● Gemini AI</span><span>● Group Alerts</span><span>● Broadcast</span><span>● Backup &amp; Restore</span><span>● Bale Bot</span><span>● Support Tickets</span><span>● Gemini AI</span><span>● Group Alerts</span><span>● Broadcast</span><span>● Backup &amp; Restore</span></div></div>
 </div>
 {% endblock %}

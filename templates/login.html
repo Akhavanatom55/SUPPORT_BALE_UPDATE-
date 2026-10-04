@@ -1,14 +1,17 @@
 {% extends 'base.html' %}
 {% block title %}ورود به پنل{% endblock %}
-{% block content %}
-<div class="center-card">
-  <div class="logo">🎧</div>
-  <h1>ورود مدیر</h1>
-  <p class="muted">پنل مدیریت ربات بله و مرکز پشتیبانی</p>
-  <form method="post" class="stack">
-    <label>نام کاربری<input name="username" autocomplete="username" required></label>
-    <label>رمز عبور<input type="password" name="password" autocomplete="current-password" required></label>
-    <button>ورود</button>
-  </form>
+{% block content %}{% from '_ui.html' import icon %}
+<div class="auth-wrap">
+  <div class="center-card glow">
+    <div class="logo">{{ icon('bot', 30) }}</div>
+    <h1>ورود به پنل مدیریت</h1>
+    <p class="muted">{{ org_name or 'مرکز پشتیبانی' }} — مدیریت ربات بله و تیکت‌ها</p>
+    <form method="post" class="stack">
+      <label>نام کاربری<input name="username" autocomplete="username" required autofocus dir="ltr"></label>
+      <label>رمز عبور<input type="password" name="password" autocomplete="current-password" required dir="ltr"></label>
+      <button class="btn primary lg block">{{ icon('lock', 18) }}ورود به پنل</button>
+    </form>
+    <a class="back-link" href="{{ url_for('home') }}">بازگشت به صفحه اصلی</a>
+  </div>
 </div>
 {% endblock %}
