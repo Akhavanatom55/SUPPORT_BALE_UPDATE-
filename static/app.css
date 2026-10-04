@@ -78,3 +78,22 @@ tbody tr{transition:.2s}tbody tr:hover{background:#00f0ff0d}
 @media(max-width:900px){.sidebar{position:static;width:auto;flex-direction:row;flex-wrap:wrap}.sidebar:before{display:none}.sidebar .danger{margin-top:0}.content{margin-right:0}.stats{grid-template-columns:1fr 1fr}.grid-2,.hero{grid-template-columns:1fr}.hero h1{font-size:40px}}
 @media(max-width:560px){.content{padding:16px}.stats{grid-template-columns:1fr}.topbar{flex-direction:column}.hero{padding:35px 10px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- v3 extra lighting ---- */
+.orb{position:fixed;border-radius:50%;filter:blur(70px);opacity:.45;z-index:-2;pointer-events:none;animation:orbf 18s ease-in-out infinite alternate}
+.o1{width:380px;height:380px;background:#00f0ff;top:-120px;left:-100px}
+.o2{width:420px;height:420px;background:#8b5cf6;bottom:-160px;right:12%;animation-delay:-6s}
+.o3{width:300px;height:300px;background:#ff2bd6;top:40%;left:38%;opacity:.22;animation-delay:-11s}
+@keyframes orbf{to{transform:translate(90px,-70px) scale(1.25)}}
+#spot{position:fixed;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;pointer-events:none;z-index:-1;background:radial-gradient(circle,#00f0ff26,#8b5cf614 45%,transparent 70%);transition:opacity .3s;opacity:0}
+body:hover #spot{opacity:1}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.chip{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:14px;background:#070a1e;border:1px solid #232b55;word-break:break-word;animation:rise .5s both}
+.chip b{font-size:14px}.chip span{font-size:13px;color:var(--mu)}
+.chip.ok{border-color:#3dffa066;box-shadow:0 0 18px #3dffa01f}.chip.ok b{color:#3dffa0;text-shadow:0 0 10px #3dffa0}
+.chip.bad{border-color:#ff2b7a66;box-shadow:0 0 18px #ff2b7a24}.chip.bad b{color:#ff6fa5;text-shadow:0 0 10px #ff2b7a}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.sidebar .brand{background:linear-gradient(90deg,var(--c1),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px #00f0ff88)}
+.panel{background-image:linear-gradient(180deg,#ffffff06,transparent 40%)}
+.stat b{background:linear-gradient(90deg,#fff,var(--c1));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 12px #00f0ff99)}
+input:hover,textarea:hover{border-color:#3a4a99}

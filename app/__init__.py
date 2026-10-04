@@ -2,8 +2,11 @@ import json
 import os
 import sqlite3
 import tempfile
+import hashlib
 import threading
 import time
+import traceback
+from collections import deque
 from datetime import datetime, timedelta
 from functools import wraps
 from io import BytesIO
@@ -225,7 +228,32 @@ def _engine_options():
     return opts
 
 
+BOT_STATE = {"seen": deque(maxlen=1000), "last_update_at": None, "last_error": None, "last_api_error": None, "registered": False}
+ENV_OVERRIDE_KEYS = ("BALE_BOT_TOKEN", "WEBHOOK_SECRET", "PUBLIC_BASE_URL", "GROUP_CHAT_ID")
+
+
+def webhook_secret():
+    """Stable webhook secret. Falls back to a value derived from the bot token if none/default is set."""
+    val = (os.environ.get("WEBHOOK_SECRET") or get_setting("WEBHOOK_SECRET") or "").strip()
+    if val and val != "change-this-webhook-secret":
+        return val
+    token = get_setting("BALE_BOT_TOKEN") or ""
+    base = f"{token}|{os.environ.get('SECRET_KEY', 'dev')}"
+    return hashlib.sha256(base.encode()).hexdigest()[:40]
+
+
+def normalize_base(base):
+    base = (base or "").strip().rstrip("/")
+    if base.startswith("http://") and "localhost" not in base and "127.0.0.1" not in base:
+        base = "https://" + base[len("http://"):]
+    if base and not base.startswith("http"):
+        base = "https://" + base
+    return base
+
+
 def get_setting(key):
+    if key in ENV_OVERRIDE_KEYS and os.environ.get(key, "").strip():
+        return os.environ[key].strip()
     row = db.session.get(Setting, key)
     return row.value if row else DEFAULT_SETTINGS.get(key, "")
 
@@ -369,9 +397,18 @@ class BaleClient:
         if not self.token:
             return {"ok": False, "description": "BALE_BOT_TOKEN is not configured"}
         try:
-            r = requests.post(f"{self.BASE_URL}/bot{self.token}/{method}", json=payload or {}, timeout=10)
-            return r.json()
+            r = requests.post(f"{self.BASE_URL}/bot{self.token}/{method}", json=payload or {}, timeout=15)
+            try:
+                data = r.json()
+            except Exception:
+                data = {"ok": False, "description": f"HTTP {r.status_code}: {r.text[:200]}"}
+            if not data.get("ok"):
+                BOT_STATE["last_api_error"] = f"{method}: {data.get('description') or data}"
+                print(f"[BALE] {method} failed: {data.get('description') or data}", flush=True)
+            return data
         except Exception as exc:
+            BOT_STATE["last_api_error"] = f"{method}: {exc}"
+            print(f"[BALE] {method} exception: {exc}", flush=True)
             return {"ok": False, "description": str(exc)}
 
     def send_message(self, chat_id, text_value, markup=None):
@@ -473,18 +510,31 @@ def ai_reply(history, system_prompt):
     return None
 
 
-def notify_admins(ticket_id):
+def notify_admins(ticket_id, message_text=None, is_new=True):
+    """Send the user's request to every admin (+ support group). Returns number of successful deliveries."""
     ticket = db.session.get(Ticket, ticket_id)
     if not ticket:
-        return
+        return 0
     client = BaleClient()
-    text_value = f"🆕 تیکت #{ticket.id}\n👤 {ticket.user_name}\n📝 {ticket.subject}\n\nبرای پاسخ دکمه زیر را بزنید."
+    uname = ticket.user_name or ticket.user_chat_id
+    head = f"🆕 درخواست جدید #{ticket.id}" if is_new else f"💬 پیام جدید در درخواست #{ticket.id}"
+    body = (message_text if message_text is not None else ticket.subject) or ""
+    text_value = f"{head}\n👤 {uname}\n🆔 {ticket.user_chat_id}\n\n📝 {body[:3500]}\n\nبرای پاسخ دکمه زیر را بزنید."
     targets = set(all_admin_ids())
     group = get_setting("GROUP_CHAT_ID")
     if group:
         targets.add(group)
+    if not targets:
+        print("[BALE] No admins configured (ADMIN_IDS is empty) - nobody to notify!", flush=True)
+        return 0
+    ok = 0
     for target in targets:
-        client.send_message(target, text_value, admin_ticket_keyboard(ticket.id, ticket.ai_enabled))
+        res = client.send_message(target, text_value, admin_ticket_keyboard(ticket.id, ticket.ai_enabled))
+        if res.get("ok"):
+            ok += 1
+        else:
+            print(f"[BALE] could not notify admin {target}: {res.get('description')}", flush=True)
+    return ok
 
 
 def handle_user_text(chat_id, sender, text_value, admin):
@@ -584,17 +634,27 @@ def handle_user_text(chat_id, sender, text_value, admin):
     ticket = Ticket.query.filter(Ticket.user_chat_id == str(chat_id), Ticket.status != "closed").order_by(Ticket.id.desc()).first()
     if not ticket:
         ticket_id = create_ticket(chat_id, name, text_value)
+        is_new = True
+        BaleClient().send_message(chat_id, f"✅ پیام شما به‌عنوان درخواست #{ticket_id} ثبت شد و برای پشتیبانی ارسال می‌شود.", main_keyboard(admin))
     else:
         ticket_id = ticket.id
         db.session.add(TicketMessage(ticket_id=ticket_id, sender="user", sender_name=name, body=text_value))
+        if ticket.status == "answered":
+            ticket.status = "open"
+        ticket.updated_at = datetime.utcnow()
         db.session.commit()
-    try_ai_or_notify(ticket_id, chat_id, text_value)
+        is_new = False
+    try_ai_or_notify(ticket_id, chat_id, text_value, is_new)
 
 
-def try_ai_or_notify(ticket_id, chat_id, last_text):
+def try_ai_or_notify(ticket_id, chat_id, last_text, is_new=True):
     ticket = db.session.get(Ticket, ticket_id)
     if not ticket:
         return
+    try:
+        notify_admins(ticket_id, last_text, is_new)
+    except Exception:
+        print("[BALE] notify_admins failed:\n" + traceback.format_exc(), flush=True)
     if ticket.ai_enabled and get_setting("AI_ENABLED") in ("true", "1", "True"):
         faq_rows = Faq.query.filter_by(is_published=True).limit(20).all()
         faq_context = "\n\n".join(f"س: {f.question}\nج: {f.answer}" for f in faq_rows)
@@ -606,7 +666,6 @@ def try_ai_or_notify(ticket_id, chat_id, last_text):
             db.session.commit()
             BaleClient().send_message(chat_id, f"🤖 {answer}", ticket_user_keyboard(ticket_id))
             return
-    notify_admins(ticket_id)
 
 
 def export_database_payload():
@@ -823,6 +882,9 @@ def handle_callback(cb):
 def handle_update(update):
     if update.get("message"):
         msg = update["message"]
+        ctype = (msg.get("chat") or {}).get("type")
+        if ctype and ctype != "private":
+            return  # ignore groups/channels (e.g. the admin support group)
         sender = msg.get("from") or {}
         chat_id = str(sender.get("id") or msg.get("chat", {}).get("id"))
         upsert_bale_user(sender)
@@ -832,8 +894,22 @@ def handle_update(update):
         text_value = (msg.get("text") or "").strip()
         if text_value:
             handle_user_text(chat_id, sender, text_value, is_bale_admin(chat_id))
+        else:
+            BaleClient().send_message(chat_id, "فعلاً فقط پیام متنی پشتیبانی می‌شود. لطفاً درخواست خود را به صورت متن بنویسید.")
     elif update.get("callback_query"):
         handle_callback(update["callback_query"])
+
+
+def process_update_async(app, update):
+    with app.app_context():
+        try:
+            handle_update(update)
+        except Exception:
+            db.session.rollback()
+            BOT_STATE["last_error"] = traceback.format_exc()[-800:]
+            print("[BALE] update failed:\n" + traceback.format_exc(), flush=True)
+        finally:
+            db.session.remove()
 
 
 def login_required(view):
@@ -898,28 +974,36 @@ def init_database():
                 pass
 
 
-def maybe_register_webhook(base_url):
-    if os.environ.get("AUTO_REGISTER_WEBHOOK", "true").lower() not in ("1", "true", "yes", "on"):
-        return
+def maybe_register_webhook(base_url, force=False):
+    if not force and os.environ.get("AUTO_REGISTER_WEBHOOK", "true").lower() not in ("1", "true", "yes", "on"):
+        return None
     token = get_setting("BALE_BOT_TOKEN")
     if not token:
-        return
-    base = (get_setting("PUBLIC_BASE_URL") or base_url or "").rstrip("/")
+        print("[BALE] BALE_BOT_TOKEN is empty - bot disabled", flush=True)
+        return None
+    base = normalize_base(get_setting("PUBLIC_BASE_URL") or base_url)
     if not base:
-        return
-    if get_setting("PUBLIC_BASE_URL") != base:
-        set_setting("PUBLIC_BASE_URL", base)
-    secret = get_setting("WEBHOOK_SECRET")
-    if not secret or secret == "change-this-webhook-secret":
-        return
-    url = f"{base}/api/bale/webhook/{secret}"
-    try:
-        info = BaleClient().webhook_info()
-        current = ((info.get("result") or {}).get("url") or "") if isinstance(info, dict) else ""
-        if current != url:
-            BaleClient().set_webhook(url)
-    except Exception:
-        pass
+        return None
+    url = f"{base}/api/bale/webhook/{webhook_secret()}"
+    info = BaleClient().webhook_info()
+    current = ((info.get("result") or {}).get("url") or "") if isinstance(info, dict) else ""
+    if current == url and not force:
+        BOT_STATE["registered"] = True
+        return {"ok": True, "description": "already registered"}
+    res = BaleClient().set_webhook(url)
+    BOT_STATE["registered"] = bool(res.get("ok"))
+    print(f"[BALE] setWebhook -> {res.get('ok')} {res.get('description', '')}", flush=True)
+    return res
+
+
+def _bg_register(app, base):
+    with app.app_context():
+        try:
+            maybe_register_webhook(base)
+        except Exception:
+            print("[BALE] webhook registration failed:\n" + traceback.format_exc(), flush=True)
+        finally:
+            db.session.remove()
 
 
 def create_app():
@@ -935,6 +1019,17 @@ def create_app():
     db.init_app(app)
     with app.app_context():
         init_database()
+    env_base = os.environ.get("PUBLIC_BASE_URL", "").strip()
+    if env_base:
+        threading.Thread(target=_bg_register, args=(app, env_base), daemon=True).start()
+        BOT_STATE["boot_registered"] = True
+
+    @app.before_request
+    def _lazy_register_webhook():
+        if BOT_STATE.get("boot_registered") or request.path.startswith("/static"):
+            return
+        BOT_STATE["boot_registered"] = True
+        threading.Thread(target=_bg_register, args=(app, request.url_root), daemon=True).start()
 
     @app.get("/")
     def home():
@@ -1120,30 +1215,72 @@ def create_app():
     @login_required
     def webhook_manage():
         action = request.form.get("action")
-        base = (get_setting("PUBLIC_BASE_URL") or request.url_root.rstrip("/")).rstrip("/")
-        secret = get_setting("WEBHOOK_SECRET")
-        url = f"{base}/api/bale/webhook/{secret}"
+        base = normalize_base(get_setting("PUBLIC_BASE_URL") or request.url_root)
+        url = f"{base}/api/bale/webhook/{webhook_secret()}"
         result = BaleClient().set_webhook(url) if action == "set" else BaleClient().delete_webhook()
-        flash((result.get("description") or ("وبهوک ثبت شد." if result.get("ok") else "خطا در وبهوک")), "success" if result.get("ok") else "error")
-        return redirect(url_for("settings_page"))
+        flash((result.get("description") or ("وبهوک ثبت شد ✅" if result.get("ok") else "خطا در وبهوک")), "success" if result.get("ok") else "error")
+        return redirect(request.referrer or url_for("settings_page"))
 
-    @app.get("/api/bale/webhook/<secret>")
+    @app.route("/api/bale/webhook/<secret>", methods=["GET", "POST"])
     def bale_webhook(secret):
-        expected = get_setting("WEBHOOK_SECRET")
-        if not secret or secret != expected:
+        if not secret or secret != webhook_secret():
             return jsonify(ok=False), 403
+        if request.method == "GET":
+            return jsonify(ok=True, message="webhook is alive")
         update = request.get_json(silent=True) or {}
-        try:
-            handle_update(update)
-            return jsonify(ok=True)
-        except Exception as exc:
-            app.logger.exception("Bale update failed")
-            return jsonify(ok=False, error=str(exc)), 500
+        uid = update.get("update_id")
+        if uid is not None:
+            if uid in BOT_STATE["seen"]:
+                return jsonify(ok=True, duplicate=True)
+            BOT_STATE["seen"].append(uid)
+        BOT_STATE["last_update_at"] = datetime.utcnow().isoformat()
+        threading.Thread(target=process_update_async, args=(app, update), daemon=True).start()
+        return jsonify(ok=True)
 
     @app.get("/api/bale/webhook-status")
     @login_required
     def webhook_status():
-        return jsonify(BaleClient().webhook_info())
+        me = BaleClient().call("getMe")
+        info = BaleClient().webhook_info()
+        wh = (info.get("result") or {}) if isinstance(info, dict) else {}
+        base = normalize_base(get_setting("PUBLIC_BASE_URL") or request.url_root)
+        expected = f"{base}/api/bale/webhook/{webhook_secret()}"
+        return jsonify(
+            token_configured=bool(get_setting("BALE_BOT_TOKEN")),
+            bot_ok=bool(me.get("ok")),
+            bot_username=(me.get("result") or {}).get("username"),
+            bot_error=None if me.get("ok") else me.get("description"),
+            webhook_registered=wh.get("url") == expected,
+            webhook_is_set=bool(wh.get("url")),
+            webhook_last_error=wh.get("last_error_message"),
+            pending_updates=wh.get("pending_update_count"),
+            admins_count=len(all_admin_ids()),
+            group_chat_id=get_setting("GROUP_CHAT_ID") or None,
+            last_update_at=BOT_STATE["last_update_at"],
+            last_error=BOT_STATE["last_error"],
+            last_api_error=BOT_STATE["last_api_error"],
+        )
+
+    @app.route("/admin/bot-test", methods=["POST"])
+    @login_required
+    def bot_test():
+        targets = set(all_admin_ids())
+        if get_setting("GROUP_CHAT_ID"):
+            targets.add(get_setting("GROUP_CHAT_ID"))
+        if not targets:
+            flash("هیچ ادمینی تعریف نشده. ADMIN_IDS را در Environment Variables بگذارید (آیدی عددی بله).", "error")
+            return redirect(request.referrer or url_for("dashboard"))
+        ok = bad = 0
+        last_err = ""
+        for t in targets:
+            r = BaleClient().send_message(t, "✅ پیام تست از پنل مدیریت. ربات به این ادمین متصل است.")
+            if r.get("ok"):
+                ok += 1
+            else:
+                bad += 1
+                last_err = r.get("description") or ""
+        flash(f"ارسال تست: موفق {ok} | ناموفق {bad}" + (f" — {last_err} (ادمین باید اول در ربات /start بزند)" if bad else ""), "success" if not bad else "error")
+        return redirect(request.referrer or url_for("dashboard"))
 
     @app.route("/api/admin/backup/import", methods=["POST"])
     @login_required

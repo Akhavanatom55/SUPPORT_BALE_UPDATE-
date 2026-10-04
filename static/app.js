@@ -22,3 +22,6 @@ el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();
 el.style.transform='perspective(900px) rotateX('+((e.clientY-r.top)/r.height-.5)*-3+'deg) rotateY('+((e.clientX-r.left)/r.width-.5)*3+'deg)'});
 el.addEventListener('mouseleave',function(){el.style.transform=''})});
 })();
+
+(function(){var s=document.getElementById('spot');if(!s)return;
+addEventListener('mousemove',function(e){s.style.left=e.clientX+'px';s.style.top=e.clientY+'px'})})();

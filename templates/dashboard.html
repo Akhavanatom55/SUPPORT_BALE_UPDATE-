@@ -8,6 +8,34 @@
   <div class="stat"><span>FAQ فعال</span><b data-count="{{ counts.faq }}">0</b></div>
   <div class="stat"><span>ادمین‌ها</span><b data-count="{{ counts.admins }}">0</b></div>
 </div>
+<section class="panel neon-border" id="botpanel">
+  <div class="panel-head"><h2>🤖 وضعیت ربات بله</h2></div>
+  <div id="botstat" class="status-grid"><span class="muted">در حال بررسی اتصال…</span></div>
+  <div class="actions" style="margin-top:14px">
+    <form method="post" action="{{ url_for('webhook_manage') }}"><input type="hidden" name="action" value="set"><button>🔗 ثبت / بروزرسانی وبهوک</button></form>
+    <form method="post" action="{{ url_for('bot_test') }}"><button class="ghost">📨 ارسال پیام تست به ادمین‌ها</button></form>
+    <button type="button" class="ghost" id="botrefresh">🔄 بررسی دوباره</button>
+  </div>
+</section>
+<script>
+(function(){
+var box=document.getElementById('botstat');
+function chip(ok,label,val){var d=document.createElement('div');d.className='chip '+(ok?'ok':'bad');var b=document.createElement('b');b.textContent=(ok?'● ':'● ')+label;var s=document.createElement('span');s.textContent=val||'';d.appendChild(b);d.appendChild(s);return d}
+function load(){box.textContent='در حال بررسی…';
+fetch('{{ url_for("webhook_status") }}',{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
+box.textContent='';
+box.appendChild(chip(d.token_configured,'توکن ربات',d.token_configured?'تنظیم شده':'BALE_BOT_TOKEN خالی است'));
+box.appendChild(chip(d.bot_ok,'اتصال به بله',d.bot_ok?('@'+(d.bot_username||'bot')):(d.bot_error||'توکن اشتباه است')));
+box.appendChild(chip(d.webhook_registered,'وبهوک',d.webhook_registered?'ثبت شده':(d.webhook_is_set?'روی آدرس دیگری ثبت است':'ثبت نشده')));
+box.appendChild(chip(d.admins_count>0,'ادمین‌ها',d.admins_count>0?(d.admins_count+' نفر'):'ADMIN_IDS تعریف نشده'));
+box.appendChild(chip(!!d.last_update_at,'آخرین پیام دریافتی',d.last_update_at||'هنوز پیامی نرسیده'));
+if(d.webhook_last_error)box.appendChild(chip(false,'خطای وبهوک (بله)',d.webhook_last_error));
+if(d.last_api_error)box.appendChild(chip(false,'آخرین خطای API',d.last_api_error));
+if(d.last_error)box.appendChild(chip(false,'آخرین خطای پردازش','جزئیات در لاگ سرور'));
+}).catch(function(){box.textContent='خطا در دریافت وضعیت'})}
+document.getElementById('botrefresh').addEventListener('click',load);load();
+})();
+</script>
 <section class="panel">
   <div class="panel-head"><h2>آخرین تیکت‌ها</h2><a href="{{ url_for('tickets_page') }}">همه</a></div>
   <div class="table-wrap"><table><thead><tr><th>#</th><th>کاربر</th><th>موضوع</th><th>وضعیت</th><th></th></tr></thead><tbody>
