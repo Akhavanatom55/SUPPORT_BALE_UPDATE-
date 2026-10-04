@@ -1,0 +1,215 @@
+{
+  "schema_version": "1.0",
+  "product": "وات پشتیبان",
+  "description_fa": "بسته کامل سورس پنل مدیریتی فارسی با پوسته روشن/تیره و رنگ‌بندی قابل انتخاب.",
+  "archive_file": "support-panel-github-upload.zip",
+  "archive_layout": "محتویات ZIP از ریشه پروژه شروع می‌شود؛ فایل‌های هم‌نام را جایگزین و مسیرهای جدید را اضافه کنید.",
+  "generated_date_utc": "2026-10-04",
+  "source_branch": "arena/01a108a0-support-bale-update",
+  "full_project_snapshot": true,
+  "manifest_path": "github-upload-manifest.json",
+  "file_count_including_manifest": 28,
+  "upload_instructions": "ZIP را در ریشه Repository استخراج کنید و ساختار پوشه‌ها را حفظ کنید. راهنمای فارسی در UPLOAD_GUIDE_FA.md قرار دارد.",
+  "files": [
+    {
+      "path": ".gitignore",
+      "upload_action": "replace_or_add",
+      "change_status": "new",
+      "size_bytes": 204,
+      "sha256": "e181741a59ae652a007e7421492b639aac1bffe6704f0733bb56a884549c3a54"
+    },
+    {
+      "path": "Procfile",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 102,
+      "sha256": "f1ca12f39abab873b344f963fc268581c255eda4b0bfb328ee9f19a166054275"
+    },
+    {
+      "path": "README.md",
+      "upload_action": "replace_or_add",
+      "change_status": "modified",
+      "size_bytes": 9108,
+      "sha256": "0d19a4e312713e1e24386a8ba98f03b349f80cd0c787a0da51d168e4c3f219b8"
+    },
+    {
+      "path": "UPLOAD_GUIDE_FA.md",
+      "upload_action": "replace_or_add",
+      "change_status": "new",
+      "size_bytes": 2049,
+      "sha256": "a9b6f350da638b29ebd572066d62bf3bd5551a1c671fdfbb8b35f2df19c50b79"
+    },
+    {
+      "path": "app.py",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 172,
+      "sha256": "fd1444fc4f43d850e78727b0f42b21e4a617668a6ce840bd84b972a939487a60"
+    },
+    {
+      "path": "app/__init__.py",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 80047,
+      "sha256": "058e73e5298438024875b73fcc7755af3e2a6fd1b98b54d1f2e8642228f402cb"
+    },
+    {
+      "path": "requirements.txt",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 116,
+      "sha256": "28cbb9070c89ac94e3559aa81a002fc8ebc9326b0fd04fa956ce2a17c0924b3a"
+    },
+    {
+      "path": "runtime.txt",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 15,
+      "sha256": "0c8eec51f68b5550ea4c14fe8ce8998d4142c6b87b649eb72fca8afd24b835cf"
+    },
+    {
+      "path": "static/app.css",
+      "upload_action": "replace_or_add",
+      "change_status": "modified",
+      "size_bytes": 57031,
+      "sha256": "3d46a63fcb3688a0ad0160cc0264d6f5e504602e8ec8af842d8445bf3f1f96cc"
+    },
+    {
+      "path": "static/app.js",
+      "upload_action": "replace_or_add",
+      "change_status": "modified",
+      "size_bytes": 16038,
+      "sha256": "0ad63d883d6594506669005d6001849966c1e2ccb449f4ee4bf4eaa0c808c9e2"
+    },
+    {
+      "path": "templates/_ui.html",
+      "upload_action": "replace_or_add",
+      "change_status": "modified",
+      "size_bytes": 5585,
+      "sha256": "b014d0fbaac9c3205b249de0b0eaf96503e049f4291637b80f1d2af636c357b7"
+    },
+    {
+      "path": "templates/admins.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 2691,
+      "sha256": "e80a4e53d9fc6245a6c91231ece5b8ea7c00cacb5b0a74cf5823db5b79176b31"
+    },
+    {
+      "path": "templates/backup.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 1440,
+      "sha256": "411fe8c2945a1eb7cbd2ef7b5345fc33466909b5169aec437ae76aba594e6ad1"
+    },
+    {
+      "path": "templates/base.html",
+      "upload_action": "replace_or_add",
+      "change_status": "modified",
+      "size_bytes": 8113,
+      "sha256": "7dc30a5b900123332b667720d9f19330da8b9fe2b73bfc86d010093946e0ff4f"
+    },
+    {
+      "path": "templates/broadcast.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 1429,
+      "sha256": "bf6d3ab52b715e3b1945adc057b41ac0e2f5921b5daeb7b55d28e8325cb811f1"
+    },
+    {
+      "path": "templates/canned.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 2828,
+      "sha256": "be91117354779fa66639c6306cfa31d92b5306ec558cf7958d8aa0b01a1eb17a"
+    },
+    {
+      "path": "templates/dashboard.html",
+      "upload_action": "replace_or_add",
+      "change_status": "modified",
+      "size_bytes": 8242,
+      "sha256": "418c3850c48a2306d036783371e806d5552947f9393d9e94e2ae808d21ecebf9"
+    },
+    {
+      "path": "templates/faq.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 2914,
+      "sha256": "f7d91c46d5c2179c03743756f0992b4e70ff89376265e7f6bc69c6ef3d53d5e9"
+    },
+    {
+      "path": "templates/gemini.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 3785,
+      "sha256": "dce3f829b2500d274ef01c149c5ca5bac2670b036b570a5921f646300f04d2d3"
+    },
+    {
+      "path": "templates/home.html",
+      "upload_action": "replace_or_add",
+      "change_status": "modified",
+      "size_bytes": 2943,
+      "sha256": "9465a34a7a4366ddc362f12a51f699e5a71fbc3e676f5ce90d07723e167f4acf"
+    },
+    {
+      "path": "templates/login.html",
+      "upload_action": "replace_or_add",
+      "change_status": "modified",
+      "size_bytes": 1323,
+      "sha256": "4355fa06d49af9b62335ef865bdf65bbfdcc02027d90d1c32efb53a8b987f1ab"
+    },
+    {
+      "path": "templates/settings.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 3980,
+      "sha256": "ae916a3fa4f8523e44fb591f8ed7a8bbdc76da8ac7a80c4b8e05f9bb6b8127b3"
+    },
+    {
+      "path": "templates/team.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 3013,
+      "sha256": "453a252120ab008100fbf1366fc98d3ea27eb76afd7df1c1df3c971946416429"
+    },
+    {
+      "path": "templates/ticket_detail.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 3847,
+      "sha256": "aaccb4ef7ef83be63ed55d645a81147a914cabc79779e36966ecaf4c80fddcee"
+    },
+    {
+      "path": "templates/tickets.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 2811,
+      "sha256": "9bdb3afe11355dc14bb41671b19aaed3079b43f55e98feab30e816d203efbc7b"
+    },
+    {
+      "path": "templates/users.html",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 2671,
+      "sha256": "2d71e81ef862f4c66526b9f887ab74b8469a29d4c3b3438350c0053936ec6e0c"
+    },
+    {
+      "path": "wsgi.py",
+      "upload_action": "replace_or_add",
+      "change_status": "unchanged",
+      "size_bytes": 172,
+      "sha256": "fd1444fc4f43d850e78727b0f42b21e4a617668a6ce840bd84b972a939487a60"
+    }
+  ],
+  "manifest_checksum_note": "این JSON داخل ZIP است. برای جلوگیری از هش بازگشتی، هش خود فایل manifest در فهرست بالا درج نشده است.",
+  "excluded_from_package": [
+    ".git/",
+    ".venv/",
+    "venv/",
+    "data/",
+    "*.db",
+    "*.sqlite*",
+    ".env واقعی و اطلاعات محرمانه",
+    "فایل ZIP خروجی"
+  ]
+}

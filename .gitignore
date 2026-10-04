@@ -1,0 +1,19 @@
+# Runtime data and secrets
+.env
+.env.*
+!.env.example
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Local development and generated delivery archives
+.venv/
+venv/
+*.zip
+.DS_Store

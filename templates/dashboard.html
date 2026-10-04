@@ -5,6 +5,15 @@
 <a class="btn secondary" href="{{ url_for('tickets_page', status='open') }}">{{ icon('ticket', 18) }}تیکت‌های باز</a>
 <a class="btn primary" href="{{ url_for('settings_page') }}">{{ icon('gear', 18) }}تنظیمات</a>
 {% endcall %}
+<section class="welcome-card panel" aria-label="معرفی پنل">
+  <div class="welcome-copy">
+    <span class="welcome-label">{{ icon('spark', 15) }}مرکز عملیات وات پشتیبان</span>
+    <h2>تمام پشتیبانی، در یک نگاه.</h2>
+    <p>از مدیریت گفتگوها تا تنظیمات ربات و دستیار هوشمند؛ ابزارهای روزانه تیم اینجا کنار هم قرار دارند.</p>
+    <div class="welcome-tags"><span>{{ icon('ticket', 12) }}مدیریت تیکت</span><span>{{ icon('reply', 12) }}پاسخ‌گویی تیم</span><span>{{ icon('shield', 12) }}کنترل سامانه</span></div>
+  </div>
+  <div class="welcome-visual" aria-hidden="true"><div class="welcome-orbit"></div><div class="welcome-core">{{ icon('bot', 29) }}</div><span class="orbit-chip one">{{ icon('spark', 15) }}</span><span class="orbit-chip two">{{ icon('ticket', 15) }}</span></div>
+</section>
 <div class="stats">
   <a class="stat" style="--a:#fbbf24" href="{{ url_for('tickets_page', status='open') }}"><i class="si">{{ icon('ticket', 22) }}</i><span>تیکت‌های باز</span><b data-count="{{ counts.open }}">0</b><small>{{ counts.answered }} پاسخ داده شده · {{ counts.closed }} بسته</small></a>
   <div class="stat" style="--a:#4f8cff"><i class="si">{{ icon('clock', 22) }}</i><span>تیکت‌های امروز</span><b data-count="{{ today }}">0</b><small>مجموع تیکت‌ها: {{ counts.total }}</small></div>
