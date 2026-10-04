@@ -3,6 +3,7 @@ import os
 import sqlite3
 import tempfile
 import threading
+import time
 from datetime import datetime, timedelta
 from functools import wraps
 from io import BytesIO
@@ -27,6 +28,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 from sqlalchemy import DateTime, inspect, text
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -214,6 +216,13 @@ def _writable_db_file():
         except OSError as exc:
             last_error = exc
     raise RuntimeError(f"No writable location for the SQLite database: {last_error}")
+
+
+def _engine_options():
+    opts = {"pool_pre_ping": True}
+    if not os.environ.get("DATABASE_URL", "").strip():
+        opts["connect_args"] = {"timeout": 30}
+    return opts
 
 
 def get_setting(key):
@@ -837,14 +846,56 @@ def login_required(view):
 
 
 def ensure_first_admin_and_settings():
-    for key, value in DEFAULT_SETTINGS.items():
-        if db.session.get(Setting, key) is None:
-            db.session.add(Setting(key=key, value=value))
-    username = os.environ.get("ADMIN_PANEL_USERNAME", "admin")
-    password = os.environ.get("ADMIN_PANEL_PASSWORD", "admin123456")
-    if PanelUser.query.count() == 0:
-        db.session.add(PanelUser(username=username, password_hash=generate_password_hash(password)))
-    db.session.commit()
+    """Idempotent seeding - safe even if another process seeds at the same time."""
+    with db.session.no_autoflush:
+        for key, value in DEFAULT_SETTINGS.items():
+            try:
+                if db.session.get(Setting, key) is None:
+                    db.session.add(Setting(key=key, value=value))
+                    db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+        username = os.environ.get("ADMIN_PANEL_USERNAME", "admin")
+        password = os.environ.get("ADMIN_PANEL_PASSWORD", "admin123456")
+        try:
+            if PanelUser.query.count() == 0:
+                db.session.add(PanelUser(username=username, password_hash=generate_password_hash(password)))
+                db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+
+
+def init_database():
+    """Create tables + seed data. Serialised across gunicorn workers with a file lock and retried on races."""
+    lock_fh = None
+    try:
+        try:
+            import fcntl
+
+            lock_fh = open(Path(tempfile.gettempdir()) / "support_bot_init.lock", "a+")
+            fcntl.flock(lock_fh, fcntl.LOCK_EX)
+        except Exception:
+            lock_fh = None
+        last_error = None
+        for attempt in range(8):
+            try:
+                db.create_all()
+                ensure_first_admin_and_settings()
+                return
+            except (IntegrityError, OperationalError, ProgrammingError) as exc:
+                db.session.rollback()
+                last_error = exc
+                time.sleep(0.4 * (attempt + 1))
+        raise last_error
+    finally:
+        if lock_fh is not None:
+            try:
+                import fcntl
+
+                fcntl.flock(lock_fh, fcntl.LOCK_UN)
+                lock_fh.close()
+            except Exception:
+                pass
 
 
 def maybe_register_webhook(base_url):
@@ -878,13 +929,12 @@ def create_app():
         SECRET_KEY=os.environ.get("SECRET_KEY", "dev-change-me"),
         SQLALCHEMY_DATABASE_URI=_database_uri(),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        SQLALCHEMY_ENGINE_OPTIONS={"pool_pre_ping": True},
+        SQLALCHEMY_ENGINE_OPTIONS=_engine_options(),
         MAX_CONTENT_LENGTH=20 * 1024 * 1024,
     )
     db.init_app(app)
     with app.app_context():
-        db.create_all()
-        ensure_first_admin_and_settings()
+        init_database()
 
     @app.get("/")
     def home():
