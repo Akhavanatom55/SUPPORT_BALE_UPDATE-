@@ -30,15 +30,40 @@
 'star':'<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9 6.8 19.7l1-5.9L3.5 9.7l5.9-.8z"/>',
 'key':'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
 'back':'<path d="M9 5l7 7-7 7"/>',
-'clock':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+'clock':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+'sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>',
+'moon':'<path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z"/>',
+'palette':'<path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.5-3.3 1.6 1.6 0 0 1 1.2-2.7H18a3 3 0 0 0 3-3c0-5-4-9-9-9Z"/><path d="M7.5 11h.01M10 7.5h.01M14 7.5h.01M16.5 11h.01"/>'
 } -%}
 <svg class="i" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ P[name]|safe }}</svg>
 {%- endmacro %}
 
+{% macro appearance_controls() -%}
+<div class="appearance-tools" aria-label="تنظیم ظاهر پنل">
+  <button type="button" class="appearance-btn theme-toggle" id="themeToggle" aria-label="تغییر حالت رنگی">
+    <span class="theme-glyph"><span class="moon-icon">{{ icon('moon', 17) }}</span><span class="sun-icon">{{ icon('sun', 17) }}</span></span>
+    <span class="control-label" data-theme-label>حالت تیره</span>
+  </button>
+  <div class="accent-picker">
+    <button type="button" class="appearance-btn accent-trigger" id="accentToggle" aria-expanded="false" aria-controls="accentPopover">
+      <span class="color-dot" aria-hidden="true"></span><span class="control-label">رنگ</span>{{ icon('palette', 16) }}
+    </button>
+    <div class="accent-menu" id="accentPopover" role="group" aria-label="انتخاب رنگ پنل" hidden>
+      <div class="accent-menu-heading">رنگ‌بندی پنل <small>انتخاب رنگ اصلی</small></div>
+      <div class="accent-options">
+        {% for key, label in [('blue','آبی رسمی'),('violet','بنفش'),('emerald','سبز'),('amber','کهربایی'),('rose','رزگلد')] %}
+        <button type="button" class="accent-option" data-accent-option="{{ key }}" aria-pressed="{{ 'true' if key == 'blue' else 'false' }}"><i class="swatch"></i><span>{{ label }}</span></button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{%- endmacro %}
+
 {% macro empty(title, hint='') -%}
-<div class="empty"><div class="empty-ic">{{ icon('search', 26) }}</div><b>{{ title }}</b>{% if hint %}<span>{{ hint }}</span>{% endif %}</div>
+<div class="empty"><div class="empty-ic">{{ icon('search', 24) }}</div><b>{{ title }}</b>{% if hint %}<span>{{ hint }}</span>{% endif %}</div>
 {%- endmacro %}
 
 {% macro head(title, sub='') -%}
-<div class="page-head"><div><h1>{{ title }}</h1>{% if sub %}<p class="muted">{{ sub }}</p>{% endif %}</div><div class="head-actions">{{ caller() if caller else '' }}</div></div>
+<div class="page-head"><div class="page-heading"><span class="eyebrow"><i></i>پنل مدیریتی وات پشتیبان</span><h1>{{ title }}</h1>{% if sub %}<p>{{ sub }}</p>{% endif %}</div><div class="head-actions">{{ caller() if caller else '' }}</div></div>
 {%- endmacro %}

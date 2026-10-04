@@ -1,68 +1,121 @@
-{% from '_ui.html' import icon %}
+{% from '_ui.html' import icon, appearance_controls %}
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="theme-color" content="#060a14">
-  <title>{% block title %}پنل پشتیبانی{% endblock %} — {{ org_name or 'پنل پشتیبانی' }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 rx=%2726%27 fill=%27%234f8cff%27/><circle cx=%2750%27 cy=%2750%27 r=%2718%27 fill=%27white%27/></svg>">
+  <meta name="theme-color" content="#f3f6fb" id="themeColorMeta">
+  <meta name="application-name" content="وات پشتیبان">
+  <title>{% block title %}پنل مدیریت{% endblock %} — وات پشتیبان</title>
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('wa-support-theme');
+        var accent = localStorage.getItem('wa-support-accent');
+        if (theme !== 'light' && theme !== 'dark') theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (!['blue', 'violet', 'emerald', 'amber', 'rose'].includes(accent)) accent = 'blue';
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.accent = accent;
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+        document.documentElement.dataset.accent = 'blue';
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v=20261004">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 rx=%2728%27 fill=%27%23456bed%27/><path d=%27M27 36h46v30H48L35 76v-10h-8z%27 fill=%27white%27/></svg>">
 </head>
 <body class="{{ 'is-auth' if session.get('panel_user_id') else 'is-guest' }}">
-  <div class="bg-mesh"><i></i><i></i><i></i><i></i><i></i></div>
-  <div class="bg-aurora"></div><div class="bg-floor"></div>
-  <canvas id="fx"></canvas><div id="spot"></div><div class="grain"></div>
+  <div class="bg-mesh" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="bg-aurora" aria-hidden="true"></div>
+  <div class="bg-floor" aria-hidden="true"></div>
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <div id="spot" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
 
   {% if session.get('panel_user_id') %}
-  <header class="mbar">
-    <button type="button" class="icon-btn" id="menuBtn" aria-label="منو">{{ icon('menu', 22) }}</button>
-    <b>{{ org_name or 'پنل پشتیبانی' }}</b>
-  </header>
-  <div class="scrim" id="scrim"></div>
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar" id="sidebar" aria-label="ناوبری پنل">
     <div class="brand">
-      <span class="logo-mark">{{ icon('bot', 22) }}</span>
-      <div><b>{{ org_name or 'پنل پشتیبانی' }}</b><small>{{ bot_name or 'ربات پشتیبانی' }}</small></div>
+      <span class="brand-mark">{{ icon('bot', 23) }}</span>
+      <div class="brand-copy"><b>وات پشتیبان</b><small>{{ org_name or 'مرکز مدیریت پشتیبانی' }}</small></div>
     </div>
     <nav>
-      <div class="nav-group">عملیات</div>
-      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}" style="--hh:215">{{ icon('dashboard') }}<span>داشبورد</span></a>
+      <div class="nav-group">نمای کلی</div>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}" style="--hh:215">{{ icon('dashboard') }}<span>داشبورد</span></a>
       <a href="{{ url_for('tickets_page') }}" class="{{ 'active' if request.endpoint in ('tickets_page','ticket_detail') }}" style="--hh:38">{{ icon('ticket') }}<span>تیکت‌ها</span>{% if open_badge %}<em class="count">{{ open_badge }}</em>{% endif %}</a>
-      <a href="{{ url_for('users_page') }}" class="{{ 'active' if request.endpoint=='users_page' }}" style="--hh:190">{{ icon('users') }}<span>کاربران ربات</span></a>
-      <a href="{{ url_for('faq_page') }}" class="{{ 'active' if request.endpoint=='faq_page' }}" style="--hh:160">{{ icon('help') }}<span>سوالات متداول</span></a>
-      <a href="{{ url_for('canned_page') }}" class="{{ 'active' if request.endpoint=='canned_page' }}" style="--hh:265">{{ icon('reply') }}<span>پاسخ‌های آماده</span></a>
-      <div class="nav-group">ارتباطات و هوش مصنوعی</div>
-      <a href="{{ url_for('broadcast_page') }}" class="{{ 'active' if request.endpoint=='broadcast_page' }}" style="--hh:330">{{ icon('megaphone') }}<span>پیام همگانی</span></a>
-      <a href="{{ url_for('gemini_page') }}" class="{{ 'active' if request.endpoint=='gemini_page' }}" style="--hh:280">{{ icon('spark') }}<span>Gemini</span></a>
+      <a href="{{ url_for('users_page') }}" class="{{ 'active' if request.endpoint == 'users_page' }}" style="--hh:190">{{ icon('users') }}<span>کاربران ربات</span></a>
+
+      <div class="nav-group">محتوا و ارتباطات</div>
+      <a href="{{ url_for('faq_page') }}" class="{{ 'active' if request.endpoint == 'faq_page' }}" style="--hh:160">{{ icon('help') }}<span>سوالات متداول</span></a>
+      <a href="{{ url_for('canned_page') }}" class="{{ 'active' if request.endpoint == 'canned_page' }}" style="--hh:265">{{ icon('reply') }}<span>پاسخ‌های آماده</span></a>
+      <a href="{{ url_for('broadcast_page') }}" class="{{ 'active' if request.endpoint == 'broadcast_page' }}" style="--hh:330">{{ icon('megaphone') }}<span>پیام همگانی</span></a>
+
       <div class="nav-group">مدیریت سامانه</div>
-      <a href="{{ url_for('admins_page') }}" class="{{ 'active' if request.endpoint=='admins_page' }}" style="--hh:200">{{ icon('shield') }}<span>ادمین‌های ربات</span></a>
-      <a href="{{ url_for('team_page') }}" class="{{ 'active' if request.endpoint=='team_page' }}" style="--hh:175">{{ icon('team') }}<span>کاربران پنل</span></a>
-      <a href="{{ url_for('backup_page') }}" class="{{ 'active' if request.endpoint=='backup_page' }}" style="--hh:20">{{ icon('db') }}<span>پشتیبان‌گیری</span></a>
-      <a href="{{ url_for('settings_page') }}" class="{{ 'active' if request.endpoint=='settings_page' }}" style="--hh:235">{{ icon('gear') }}<span>تنظیمات</span></a>
+      <a href="{{ url_for('gemini_page') }}" class="{{ 'active' if request.endpoint == 'gemini_page' }}" style="--hh:280">{{ icon('spark') }}<span>دستیار Gemini</span></a>
+      <a href="{{ url_for('admins_page') }}" class="{{ 'active' if request.endpoint == 'admins_page' }}" style="--hh:200">{{ icon('shield') }}<span>ادمین‌های ربات</span></a>
+      <a href="{{ url_for('team_page') }}" class="{{ 'active' if request.endpoint == 'team_page' }}" style="--hh:175">{{ icon('team') }}<span>کاربران پنل</span></a>
+      <a href="{{ url_for('backup_page') }}" class="{{ 'active' if request.endpoint == 'backup_page' }}" style="--hh:20">{{ icon('db') }}<span>پشتیبان‌گیری</span></a>
+      <a href="{{ url_for('settings_page') }}" class="{{ 'active' if request.endpoint == 'settings_page' }}" style="--hh:235">{{ icon('gear') }}<span>تنظیمات</span></a>
     </nav>
     <div class="side-foot">
       <div class="who"><span class="avatar">{{ (session.get('panel_username') or 'A')[:1]|upper }}</span><div><b>{{ session.get('panel_username') }}</b><small>مدیر سامانه</small></div></div>
-      <a href="{{ url_for('logout') }}" class="logout" title="خروج">{{ icon('logout', 18) }}</a>
+      <a href="{{ url_for('logout') }}" class="logout" title="خروج از پنل" aria-label="خروج از پنل">{{ icon('logout', 17) }}</a>
     </div>
   </aside>
+  <div class="scrim" id="scrim"></div>
   {% endif %}
 
-  <main class="content {% if not session.get('panel_user_id') %}full{% endif %}">
-    {% block content %}{% endblock %}
+  <main class="content {{ 'full' if not session.get('panel_user_id') }}">
+    {% if session.get('panel_user_id') %}
+    <header class="topbar">
+      <div class="topbar-start">
+        <button type="button" class="menu-trigger" id="menuBtn" aria-label="باز کردن منو" aria-expanded="false" aria-controls="sidebar">{{ icon('menu', 20) }}</button>
+        <a class="topbar-brand" href="{{ url_for('dashboard') }}" aria-label="وات پشتیبان، داشبورد">
+          <span class="mini-mark">{{ icon('bot', 19) }}</span>
+          <span class="topbar-brand-copy"><b>وات پشتیبان</b><small>پنل مدیریتی</small></span>
+        </a>
+        <span class="topbar-divider" aria-hidden="true"></span>
+        <div class="workspace-note"><span>فضای کاری</span><b>{{ org_name or 'مرکز پشتیبانی' }}</b></div>
+      </div>
+      <div class="topbar-tools">
+        <span class="date-chip" data-local-date aria-label="تاریخ امروز"></span>
+        <span class="session-chip"><i></i>نشست فعال</span>
+        {{ appearance_controls() }}
+      </div>
+    </header>
+    {% else %}
+    <header class="topbar public-topbar">
+      <a class="public-brand" href="{{ url_for('home') }}" aria-label="وات پشتیبان، صفحه اصلی">
+        <span class="mini-mark">{{ icon('bot', 21) }}</span>
+        <span class="public-brand-copy"><b>وات پشتیبان</b><small>سامانه پشتیبانی هوشمند</small></span>
+      </a>
+      <div class="public-nav-actions">
+        {{ appearance_controls() }}
+        {% if request.endpoint != 'home' %}<a class="btn secondary sm" href="{{ url_for('home') }}">صفحه اصلی</a>{% endif %}
+        {% if request.endpoint == 'home' %}<a class="btn primary sm" href="{{ url_for('login') }}">{{ icon('lock', 15) }}ورود مدیران</a>{% endif %}
+      </div>
+    </header>
+    {% endif %}
+
+    <div class="page-body">
+      {% block content %}{% endblock %}
+      {% if session.get('panel_user_id') %}
+      <footer class="page-footer"><span>وات پشتیبان <span class="footer-sep">·</span> پنل مدیریت</span><span>محیط کاری فارسی و راست‌چین</span></footer>
+      {% endif %}
+    </div>
   </main>
 
   <div class="toasts" aria-live="polite">
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}<div class="flash {{ category }}" role="status"><span class="dot"></span><p>{{ message }}</p><button type="button" class="x" aria-label="بستن">{{ icon('x', 16) }}</button></div>{% endfor %}
+      {% for category, message in messages %}<div class="flash {{ category }}" role="status"><span class="dot"></span><p>{{ message }}</p><button type="button" class="x" aria-label="بستن">{{ icon('x', 15) }}</button></div>{% endfor %}
     {% endwith %}
   </div>
 
-  <dialog id="confirmBox">
+  <dialog id="confirmBox" aria-labelledby="confirmTitle">
     <div class="dlg-body"><h3 id="confirmTitle">تأیید عملیات</h3><p class="muted" id="confirmText"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button type="button" class="btn danger" id="confirmOk">تأیید و ادامه</button></div>
   </dialog>
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script src="{{ url_for('static', filename='app.js') }}?v=20261004" defer></script>
 </body>
 </html>

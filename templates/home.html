@@ -1,24 +1,37 @@
 {% extends 'base.html' %}
-{% block title %}{{ settings.ORGANIZATION_NAME or 'ربات پشتیبانی' }}{% endblock %}
+{% block title %}سامانه پشتیبانی{% endblock %}
 {% block content %}{% from '_ui.html' import icon %}
 <div class="home-wrap">
-<section class="hero">
-  <div class="hero-text">
-    <span class="badge live"><i></i>سامانه فعال</span>
-    <h1>{{ settings.BOT_NAME or 'ربات پشتیبانی' }}</h1>
-    <p>مدیریت یکپارچه تیکت‌ها، سوالات متداول، دستیار هوشمند و ربات بله؛ همه در یک پنل سازمانی.</p>
-    <div class="actions"><a class="btn primary lg" href="{{ url_for('login') }}">{{ icon('lock', 18) }}ورود به پنل مدیریت</a><a class="btn ghost lg" href="{{ url_for('health') }}">وضعیت سرویس</a></div>
-  </div>
-  <div class="hero-box glow">
-    <div class="orbit"><div class="r r1"><b>{{ icon('reply', 18) }}</b></div><div class="r r2"><b>{{ icon('spark', 18) }}</b></div><div class="r r3"><b>{{ icon('ticket', 18) }}</b></div><div class="core">{{ icon('bot', 30) }}</div></div>
-    <div class="cap"><b>مرکز فرماندهی پشتیبانی</b><span>بله · Gemini · تیکت</span></div>
-  </div>
-</section>
-<section class="features">
-  <div class="feature" style="--a:#4f8cff"><div class="fi">{{ icon('reply', 22) }}</div><h3>ربات بله</h3><p>کاربران درخواست‌شان را مستقیم در بله ثبت می‌کنند.</p></div>
-  <div class="feature" style="--a:#fbbf24"><div class="fi">{{ icon('megaphone', 22) }}</div><h3>اعلان فوری</h3><p>هر درخواست برای ادمین‌ها و گروه پشتیبانی ارسال می‌شود.</p></div>
-  <div class="feature" style="--a:#a78bfa"><div class="fi">{{ icon('spark', 22) }}</div><h3>دستیار Gemini</h3><p>پاسخ خودکار هوشمند با چرخش خودکار کلیدها.</p></div>
-  <div class="feature" style="--a:#34d399"><div class="fi">{{ icon('shield', 22) }}</div><h3>پنل مدیریت</h3><p>تیکت، کاربران، FAQ، پیام همگانی و پشتیبان‌گیری.</p></div>
-</section>
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="badge live"><i></i>سامانه پشتیبانی یکپارچه</span>
+      <h1>پشتیبانی هوشمند،<br><span>با نگاه مدیریتی.</span></h1>
+      <p>وات پشتیبان، مرکز مدیریت درخواست‌های کاربران، پاسخ‌گویی تیم و دستیار هوشمند است؛ تجربه‌ای منظم برای مدیران و پاسخی سریع‌تر برای کاربران.</p>
+      <div class="actions">
+        <a class="btn primary lg" href="{{ url_for('login') }}">{{ icon('lock', 17) }}ورود به پنل مدیریت</a>
+        <a class="btn secondary lg" href="{{ url_for('health') }}">{{ icon('check', 17) }}وضعیت سرویس</a>
+      </div>
+      <div class="hero-meta">
+        <span class="avatar-stack" aria-hidden="true"><i>{{ icon('ticket', 13) }}</i><i>{{ icon('reply', 13) }}</i><i>{{ icon('spark', 13) }}</i></span>
+        <span>تیکت، ارتباطات و هوش مصنوعی؛ همه در یک پنل</span>
+      </div>
+    </div>
+    <div class="hero-box glow">
+      <span class="hero-status"><i></i>مرکز فرماندهی پشتیبانی</span>
+      <div class="orbit" aria-hidden="true">
+        <div class="r r1"><b>{{ icon('reply', 16) }}</b></div>
+        <div class="r r2"><b>{{ icon('spark', 16) }}</b></div>
+        <div class="r r3"><b>{{ icon('ticket', 16) }}</b></div>
+        <div class="core">{{ icon('bot', 31) }}</div>
+      </div>
+      <div class="cap"><b>{{ settings.BOT_NAME or 'ربات پشتیبانی' }}</b><span>بله · Gemini · تیکت‌ها</span></div>
+    </div>
+  </section>
+  <section class="features" aria-label="امکانات سامانه">
+    <article class="feature" style="--a:#456bed"><div class="fi">{{ icon('ticket', 20) }}</div><h3>مدیریت تیکت</h3><p>پیگیری درخواست‌ها، گفتگو با کاربران و کنترل وضعیت هر پرونده.</p></article>
+    <article class="feature" style="--a:#13866d"><div class="fi">{{ icon('reply', 20) }}</div><h3>پاسخ‌گویی سریع</h3><p>پاسخ‌های آماده و ابزارهای ساده برای کار روزمره تیم.</p></article>
+    <article class="feature" style="--a:#7957d5"><div class="fi">{{ icon('spark', 20) }}</div><h3>دستیار هوشمند</h3><p>اتصال Gemini و مدیریت کلیدهای API در یک فضای متمرکز.</p></article>
+    <article class="feature" style="--a:#bd7a24"><div class="fi">{{ icon('shield', 20) }}</div><h3>کنترل و پشتیبان</h3><p>مدیریت کاربران و ادمین‌ها، تنظیمات، پیام همگانی و پشتیبان‌گیری.</p></article>
+  </section>
 </div>
 {% endblock %}
