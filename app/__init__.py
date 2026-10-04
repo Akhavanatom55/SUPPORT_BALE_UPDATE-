@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sqlite3
 import tempfile
 import hashlib
@@ -229,7 +230,35 @@ def _engine_options():
 
 
 BOT_STATE = {"seen": deque(maxlen=1000), "last_update_at": None, "last_error": None, "last_api_error": None, "registered": False}
-ENV_OVERRIDE_KEYS = ("BALE_BOT_TOKEN", "WEBHOOK_SECRET", "PUBLIC_BASE_URL", "GROUP_CHAT_ID")
+ENV_OVERRIDE_KEYS = ("WEBHOOK_SECRET", "PUBLIC_BASE_URL", "GROUP_CHAT_ID")
+
+
+def clean_token(value):
+    """Normalise a pasted bot token (quotes, spaces, 'bot' prefix, full API URL...)."""
+    v = (value or "").strip().strip("\"'`").strip()
+    v = re.sub(r"^https?://[^/]+/(file/)?bot", "", v, flags=re.I)
+    v = re.sub(r"^(bot|token\s*[:=])\s*(?=\d+:)", "", v, flags=re.I)
+    return re.sub(r"\s+", "", v)
+
+
+def bot_token_info():
+    """Returns (token, source). Priority: token saved in panel > env var > seeded DB value."""
+    try:
+        row = db.session.get(Setting, "BALE_BOT_TOKEN_PANEL")
+        if row and clean_token(row.value):
+            return clean_token(row.value), "panel"
+    except Exception:
+        db.session.rollback()
+    env = clean_token(os.environ.get("BALE_BOT_TOKEN", ""))
+    if env:
+        return env, "env"
+    try:
+        row = db.session.get(Setting, "BALE_BOT_TOKEN")
+        if row and clean_token(row.value):
+            return clean_token(row.value), "database"
+    except Exception:
+        db.session.rollback()
+    return "", "none"
 
 
 def webhook_secret():
@@ -252,6 +281,8 @@ def normalize_base(base):
 
 
 def get_setting(key):
+    if key == "BALE_BOT_TOKEN":
+        return bot_token_info()[0]
     if key in ENV_OVERRIDE_KEYS and os.environ.get(key, "").strip():
         return os.environ[key].strip()
     row = db.session.get(Setting, key)
@@ -1183,9 +1214,28 @@ def create_app():
         if request.method == "POST":
             for key in editable:
                 if key in request.form: set_setting(key, request.form.get(key, ""))
+            new_token = clean_token(request.form.get("BALE_BOT_TOKEN_PANEL", ""))
+            if request.form.get("clear_token"):
+                set_setting("BALE_BOT_TOKEN_PANEL", "")
+                flash("توکن ذخیره‌شده در پنل پاک شد؛ از Environment Variable استفاده می‌شود.", "success")
+            elif new_token:
+                if not re.match(r"^\d+:[\w-]{20,}$", new_token):
+                    flash("فرمت توکن درست نیست. باید شبیه 123456789:AbCdEf... باشد.", "error")
+                    return redirect(url_for("settings_page"))
+                me = BaleClient(new_token).call("getMe")
+                if not me.get("ok"):
+                    flash(f"بله این توکن را نپذیرفت ({me.get('description')}). توکن ذخیره نشد؛ از BotFather بله توکن را دوباره کپی کنید.", "error")
+                    return redirect(url_for("settings_page"))
+                set_setting("BALE_BOT_TOKEN_PANEL", new_token)
+                res = maybe_register_webhook(request.url_root, force=True) or {}
+                flash(f"✅ ربات @{(me.get('result') or {}).get('username', '')} متصل شد. وبهوک: {'ثبت شد' if res.get('ok') else (res.get('description') or 'خطا')}", "success" if res.get("ok") else "error")
+                return redirect(url_for("settings_page"))
             flash("تنظیمات ذخیره شد.", "success")
             return redirect(url_for("settings_page"))
         values = {key: get_setting(key) for key in editable}
+        tok, src = bot_token_info()
+        values["token_source"] = src
+        values["token_bot_id"] = tok.split(":")[0] if tok else ""
         return render_template("settings.html", values=values)
 
     @app.route("/admin/backup", methods=["GET", "POST"])
@@ -1247,6 +1297,8 @@ def create_app():
         expected = f"{base}/api/bale/webhook/{webhook_secret()}"
         return jsonify(
             token_configured=bool(get_setting("BALE_BOT_TOKEN")),
+            token_source=bot_token_info()[1],
+            token_bot_id=(bot_token_info()[0].split(":")[0] if bot_token_info()[0] else ""),
             bot_ok=bool(me.get("ok")),
             bot_username=(me.get("result") or {}).get("username"),
             bot_error=None if me.get("ok") else me.get("description"),

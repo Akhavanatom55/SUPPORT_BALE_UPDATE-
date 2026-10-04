@@ -14,6 +14,7 @@
   <div class="actions" style="margin-top:14px">
     <form method="post" action="{{ url_for('webhook_manage') }}"><input type="hidden" name="action" value="set"><button>🔗 ثبت / بروزرسانی وبهوک</button></form>
     <form method="post" action="{{ url_for('bot_test') }}"><button class="ghost">📨 ارسال پیام تست به ادمین‌ها</button></form>
+    <a class="button ghost" href="{{ url_for('settings_page') }}">🔑 تغییر توکن</a>
     <button type="button" class="ghost" id="botrefresh">🔄 بررسی دوباره</button>
   </div>
 </section>
@@ -24,8 +25,8 @@ function chip(ok,label,val){var d=document.createElement('div');d.className='chi
 function load(){box.textContent='در حال بررسی…';
 fetch('{{ url_for("webhook_status") }}',{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
 box.textContent='';
-box.appendChild(chip(d.token_configured,'توکن ربات',d.token_configured?'تنظیم شده':'BALE_BOT_TOKEN خالی است'));
-box.appendChild(chip(d.bot_ok,'اتصال به بله',d.bot_ok?('@'+(d.bot_username||'bot')):(d.bot_error||'توکن اشتباه است')));
+box.appendChild(chip(d.token_configured,'توکن ربات',d.token_configured?('منبع: '+({panel:'پنل',env:'Environment',database:'دیتابیس'}[d.token_source]||d.token_source)+' · شناسه ربات: '+d.token_bot_id):'BALE_BOT_TOKEN خالی است'));
+box.appendChild(chip(d.bot_ok,'اتصال به بله',d.bot_ok?('@'+(d.bot_username||'bot')):((d.bot_error||'خطا')+' — توکن نامعتبر یا باطل شده؛ در تنظیمات توکن جدید را وارد کنید')));
 box.appendChild(chip(d.webhook_registered,'وبهوک',d.webhook_registered?'ثبت شده':(d.webhook_is_set?'روی آدرس دیگری ثبت است':'ثبت نشده')));
 box.appendChild(chip(d.admins_count>0,'ادمین‌ها',d.admins_count>0?(d.admins_count+' نفر'):'ADMIN_IDS تعریف نشده'));
 box.appendChild(chip(!!d.last_update_at,'آخرین پیام دریافتی',d.last_update_at||'هنوز پیامی نرسیده'));
