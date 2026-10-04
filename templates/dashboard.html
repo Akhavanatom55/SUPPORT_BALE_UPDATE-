@@ -3,10 +3,10 @@
 {% block content %}
 <div class="topbar"><div><h1>داشبورد</h1><p class="muted">خلاصه وضعیت سیستم</p></div><a class="button" href="{{ url_for('settings_page') }}">تنظیمات</a></div>
 <div class="stats">
-  <div class="stat"><span>کاربران بله</span><b>{{ counts.users }}</b></div>
-  <div class="stat"><span>تیکت‌های باز</span><b>{{ counts.open }}</b></div>
-  <div class="stat"><span>FAQ فعال</span><b>{{ counts.faq }}</b></div>
-  <div class="stat"><span>ادمین‌ها</span><b>{{ counts.admins }}</b></div>
+  <div class="stat"><span>کاربران بله</span><b data-count="{{ counts.users }}">0</b></div>
+  <div class="stat"><span>تیکت‌های باز</span><b data-count="{{ counts.open }}">0</b></div>
+  <div class="stat"><span>FAQ فعال</span><b data-count="{{ counts.faq }}">0</b></div>
+  <div class="stat"><span>ادمین‌ها</span><b data-count="{{ counts.admins }}">0</b></div>
 </div>
 <section class="panel">
   <div class="panel-head"><h2>آخرین تیکت‌ها</h2><a href="{{ url_for('tickets_page') }}">همه</a></div>

@@ -5,19 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{% block title %}پنل پشتیبانی{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>🎧</text></svg>">
 </head>
 <body>
+  <canvas id="fx"></canvas>
   {% if session.get('panel_user_id') %}
   <aside class="sidebar">
     <div class="brand">🎧 پنل پشتیبانی</div>
-    <a href="{{ url_for('dashboard') }}">داشبورد</a>
-    <a href="{{ url_for('tickets_page') }}">تیکت‌ها</a>
-    <a href="{{ url_for('faq_page') }}">سوالات متداول</a>
-    <a href="{{ url_for('gemini_page') }}">Gemini</a>
-    <a href="{{ url_for('admins_page') }}">ادمین‌ها</a>
-    <a href="{{ url_for('broadcast_page') }}">پیام همگانی</a>
-    <a href="{{ url_for('backup_page') }}">پشتیبان دیتابیس</a>
-    <a href="{{ url_for('settings_page') }}">تنظیمات</a>
+    <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">داشبورد</a>
+    <a href="{{ url_for('tickets_page') }}" class="{{ 'active' if request.endpoint=='tickets_page' }}">تیکت‌ها</a>
+    <a href="{{ url_for('faq_page') }}" class="{{ 'active' if request.endpoint=='faq_page' }}">سوالات متداول</a>
+    <a href="{{ url_for('gemini_page') }}" class="{{ 'active' if request.endpoint=='gemini_page' }}">Gemini</a>
+    <a href="{{ url_for('admins_page') }}" class="{{ 'active' if request.endpoint=='admins_page' }}">ادمین‌ها</a>
+    <a href="{{ url_for('broadcast_page') }}" class="{{ 'active' if request.endpoint=='broadcast_page' }}">پیام همگانی</a>
+    <a href="{{ url_for('backup_page') }}" class="{{ 'active' if request.endpoint=='backup_page' }}">پشتیبان دیتابیس</a>
+    <a href="{{ url_for('settings_page') }}" class="{{ 'active' if request.endpoint=='settings_page' }}">تنظیمات</a>
     <a href="{{ url_for('logout') }}" class="danger">خروج</a>
   </aside>
   {% endif %}
@@ -27,5 +29,6 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

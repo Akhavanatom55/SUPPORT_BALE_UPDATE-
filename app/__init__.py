@@ -182,8 +182,38 @@ def _database_uri():
         elif url.startswith("postgresql://"):
             url = "postgresql+psycopg://" + url[len("postgresql://") :]
         return url
-    DB_FILE.parent.mkdir(parents=True, exist_ok=True)
-    return f"sqlite:///{DB_FILE.as_posix()}"
+    path = _writable_db_file()
+    return f"sqlite:///{path.as_posix()}"
+
+
+def _writable_db_file():
+    """Pick a writable location for SQLite (the app dir may be read-only on Belmo)."""
+    global DB_FILE
+    candidates = [DB_FILE]
+    for extra in (
+        Path(tempfile.gettempdir()) / "support_bot" / "support_bot.db",
+        Path.home() / ".support_bot" / "support_bot.db",
+    ):
+        if extra not in candidates:
+            candidates.append(extra)
+    last_error = None
+    for cand in candidates:
+        try:
+            cand.parent.mkdir(parents=True, exist_ok=True)
+            probe = cand.parent / ".write_test"
+            probe.write_text("ok")
+            probe.unlink()
+            if cand != candidates[0]:
+                print(
+                    f"[WARN] {candidates[0].parent} is not writable; using {cand}. "
+                    "Data may be lost on restart - set DATABASE_URL (PostgreSQL) for persistence.",
+                    flush=True,
+                )
+            DB_FILE = cand
+            return cand
+        except OSError as exc:
+            last_error = exc
+    raise RuntimeError(f"No writable location for the SQLite database: {last_error}")
 
 
 def get_setting(key):
