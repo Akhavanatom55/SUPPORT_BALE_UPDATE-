@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}تیکت #{{ ticket.id }}{% endblock %}
+{% block content %}
+<div class="topbar"><div><h1>تیکت #{{ ticket.id }}</h1><p class="muted">{{ ticket.user_name }} — {{ ticket.user_chat_id }}</p></div><a href="{{ url_for('tickets_page') }}">← بازگشت</a></div>
+<section class="panel">
+  <div class="conversation">{% for m in messages %}<div class="message {{ m.sender }}"><div class="meta">{{ m.sender_name or m.sender }} · {{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</div><div>{{ m.body|replace('\n','<br>')|safe }}</div></div>{% endfor %}</div>
+  <form method="post" action="{{ url_for('tickets_page') }}" class="stack">
+    <input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="action" value="reply">
+    <label>پاسخ<textarea name="body" rows="4" required></textarea></label><button>ارسال پاسخ به کاربر</button>
+  </form>
+  <div class="actions"><form method="post" action="{{ url_for('tickets_page') }}"><input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="action" value="toggle_ai"><button class="ghost">{{ 'خاموش کردن AI' if ticket.ai_enabled else 'روشن کردن AI' }}</button></form><form method="post" action="{{ url_for('tickets_page') }}"><input type="hidden" name="ticket_id" value="{{ ticket.id }}"><input type="hidden" name="action" value="close"><button class="danger-btn">بستن تیکت</button></form></div>
+</section>
+{% endblock %}

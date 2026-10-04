@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}تیکت‌ها{% endblock %}
+{% block content %}
+<div class="topbar"><div><h1>تیکت‌ها</h1><div class="tabs"><a href="{{ url_for('tickets_page') }}">همه</a><a href="{{ url_for('tickets_page', status='open') }}">باز</a><a href="{{ url_for('tickets_page', status='answered') }}">پاسخ‌داده‌شده</a><a href="{{ url_for('tickets_page', status='closed') }}">بسته</a></div></div></div>
+<section class="panel"><div class="table-wrap"><table><thead><tr><th>#</th><th>کاربر</th><th>موضوع</th><th>AI</th><th>وضعیت</th><th></th></tr></thead><tbody>
+{% for t in tickets %}<tr><td>{{ t.id }}</td><td>{{ t.user_name }}<br><small>{{ t.user_chat_id }}</small></td><td>{{ t.subject }}</td><td>{{ 'روشن' if t.ai_enabled else 'خاموش' }}</td><td><span class="status {{ t.status }}">{{ t.status }}</span></td><td><a class="button small" href="{{ url_for('ticket_detail', ticket_id=t.id) }}">بازکردن</a></td></tr>{% else %}<tr><td colspan="6">تیکتی یافت نشد.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

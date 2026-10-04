@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block title %}سوالات متداول{% endblock %}
+{% block content %}
+<h1>سوالات متداول</h1><div class="grid-2"><section class="panel"><h2>افزودن</h2><form method="post" class="stack"><input type="hidden" name="action" value="add"><label>سوال<input name="question" required></label><label>پاسخ<textarea name="answer" rows="7" required></textarea></label><button>ذخیره FAQ</button></form></section><section class="panel"><h2>لیست</h2>{% for f in faqs %}<div class="list-row"><div><b>{{ f.question }}</b><div class="muted">{{ f.answer[:160] }}</div></div><div class="actions"><form method="post"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ f.id }}"><button class="small ghost">{{ 'فعال' if f.is_published else 'غیرفعال' }}</button></form><form method="post"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ f.id }}"><button class="small danger-btn">حذف</button></form></div></div>{% else %}<p class="muted">موردی نیست.</p>{% endfor %}</section></div>
+{% endblock %}

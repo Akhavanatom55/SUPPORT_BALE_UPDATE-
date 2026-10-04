@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}داشبورد{% endblock %}
+{% block content %}
+<div class="topbar"><div><h1>داشبورد</h1><p class="muted">خلاصه وضعیت سیستم</p></div><a class="button" href="{{ url_for('settings_page') }}">تنظیمات</a></div>
+<div class="stats">
+  <div class="stat"><span>کاربران بله</span><b>{{ counts.users }}</b></div>
+  <div class="stat"><span>تیکت‌های باز</span><b>{{ counts.open }}</b></div>
+  <div class="stat"><span>FAQ فعال</span><b>{{ counts.faq }}</b></div>
+  <div class="stat"><span>ادمین‌ها</span><b>{{ counts.admins }}</b></div>
+</div>
+<section class="panel">
+  <div class="panel-head"><h2>آخرین تیکت‌ها</h2><a href="{{ url_for('tickets_page') }}">همه</a></div>
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>کاربر</th><th>موضوع</th><th>وضعیت</th><th></th></tr></thead><tbody>
+  {% for t in recent %}<tr><td>{{ t.id }}</td><td>{{ t.user_name }}</td><td>{{ t.subject }}</td><td><span class="status {{ t.status }}">{{ t.status }}</span></td><td><a href="{{ url_for('ticket_detail', ticket_id=t.id) }}">مشاهده</a></td></tr>{% else %}<tr><td colspan="5" class="muted">تیکتی وجود ندارد.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}
