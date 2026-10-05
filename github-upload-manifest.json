@@ -1,11 +1,11 @@
 {
   "schema_version": "1.0",
-  "product": "وات پشتیبان",
-  "description_fa": "بسته کامل سورس پنل مدیریتی فارسی با پوسته روشن/تیره و رنگ‌بندی قابل انتخاب.",
+  "product": "پنل مدیریتی ربات پشتیبانی",
+  "description_fa": "پنل مدیریتی فارسی راست‌چین با پوسته روشن/تیره، نورپردازی پویا و انیمیشن‌های ظریف.",
   "archive_file": "support-panel-github-upload.zip",
   "archive_layout": "محتویات ZIP از ریشه پروژه شروع می‌شود؛ فایل‌های هم‌نام را جایگزین و مسیرهای جدید را اضافه کنید.",
-  "generated_date_utc": "2026-10-04",
-  "source_branch": "arena/01a108a0-support-bale-update",
+  "generated_date_utc": "2026-10-05",
+  "source_branch": "arena/01a10bed-support-bale-update",
   "full_project_snapshot": true,
   "manifest_path": "github-upload-manifest.json",
   "file_count_including_manifest": 28,
@@ -29,15 +29,15 @@
       "path": "README.md",
       "upload_action": "replace_or_add",
       "change_status": "modified",
-      "size_bytes": 9108,
-      "sha256": "0d19a4e312713e1e24386a8ba98f03b349f80cd0c787a0da51d168e4c3f219b8"
+      "size_bytes": 9337,
+      "sha256": "2778b6d4afc92088a6dd7caeddfc5d4e7b7b01cc36fc2bea4030fb253aa5e4bf"
     },
     {
       "path": "UPLOAD_GUIDE_FA.md",
       "upload_action": "replace_or_add",
-      "change_status": "new",
-      "size_bytes": 2049,
-      "sha256": "a9b6f350da638b29ebd572066d62bf3bd5551a1c671fdfbb8b35f2df19c50b79"
+      "change_status": "modified",
+      "size_bytes": 2075,
+      "sha256": "72a20e09e18970bb4159ceda8985af7d9275c80a0c8c70810835d6c3571d7bed"
     },
     {
       "path": "app.py",
@@ -71,22 +71,22 @@
       "path": "static/app.css",
       "upload_action": "replace_or_add",
       "change_status": "modified",
-      "size_bytes": 57031,
-      "sha256": "3d46a63fcb3688a0ad0160cc0264d6f5e504602e8ec8af842d8445bf3f1f96cc"
+      "size_bytes": 72717,
+      "sha256": "27ef92274dfe6598f7d991d3e7f9d8e2e7fd0d12919553e03d8fe485b1d45b00"
     },
     {
       "path": "static/app.js",
       "upload_action": "replace_or_add",
       "change_status": "modified",
-      "size_bytes": 16038,
-      "sha256": "0ad63d883d6594506669005d6001849966c1e2ccb449f4ee4bf4eaa0c808c9e2"
+      "size_bytes": 16890,
+      "sha256": "7f309211529a086936455741f3dc4e9cbbc1f82cb0f3ed30dc7a8b04ec878fc2"
     },
     {
       "path": "templates/_ui.html",
       "upload_action": "replace_or_add",
       "change_status": "modified",
-      "size_bytes": 5585,
-      "sha256": "b014d0fbaac9c3205b249de0b0eaf96503e049f4291637b80f1d2af636c357b7"
+      "size_bytes": 5589,
+      "sha256": "41ea5780be52882e6806062a429010909dec837c24930bd57a714eb4dd9a6fc7"
     },
     {
       "path": "templates/admins.html",
@@ -106,8 +106,8 @@
       "path": "templates/base.html",
       "upload_action": "replace_or_add",
       "change_status": "modified",
-      "size_bytes": 8113,
-      "sha256": "7dc30a5b900123332b667720d9f19330da8b9fe2b73bfc86d010093946e0ff4f"
+      "size_bytes": 8279,
+      "sha256": "2b32c93f5ca0a17a263e3a236a465b364875045bb01b9dfa2991e51134c75dcd"
     },
     {
       "path": "templates/broadcast.html",
@@ -127,8 +127,8 @@
       "path": "templates/dashboard.html",
       "upload_action": "replace_or_add",
       "change_status": "modified",
-      "size_bytes": 8242,
-      "sha256": "418c3850c48a2306d036783371e806d5552947f9393d9e94e2ae808d21ecebf9"
+      "size_bytes": 8271,
+      "sha256": "21c570725ea85edc6c1de5043560c70e149dc6c8d82a429c0cbf1bf394758b82"
     },
     {
       "path": "templates/faq.html",
@@ -148,15 +148,15 @@
       "path": "templates/home.html",
       "upload_action": "replace_or_add",
       "change_status": "modified",
-      "size_bytes": 2943,
-      "sha256": "9465a34a7a4366ddc362f12a51f699e5a71fbc3e676f5ce90d07723e167f4acf"
+      "size_bytes": 2969,
+      "sha256": "b4003ef6275070de5185fa7fa8c774a023fdf468996885b6812b056ef1e41178"
     },
     {
       "path": "templates/login.html",
       "upload_action": "replace_or_add",
       "change_status": "modified",
-      "size_bytes": 1323,
-      "sha256": "4355fa06d49af9b62335ef865bdf65bbfdcc02027d90d1c32efb53a8b987f1ab"
+      "size_bytes": 1411,
+      "sha256": "cc3ad4e493c4b1d006d069bc79acb5fcbeb5644a67df887c902b7b06894681e6"
     },
     {
       "path": "templates/settings.html",

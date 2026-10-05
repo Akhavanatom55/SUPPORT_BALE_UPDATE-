@@ -110,19 +110,33 @@
     }
   });
 
-  /* Gentle cursor-following light. Updates are batched to the next frame. */
+  /* Cursor-following ambience plus a per-control light hotspot, batched to one frame. */
   if (!reduceMotion && finePointer) {
     var pointerFrame = 0;
     var pointerX = 0;
     var pointerY = 0;
+    var lightTarget = null;
+    var lightX = 50;
+    var lightY = 50;
+    var lightTargets = '.btn, .appearance-btn, .icon-btn, .menu-trigger, .logout, .chip-btn, .accent-option, .flash .x, .stat, .feature, .panel, .sidebar nav a';
     document.addEventListener('pointermove', function (event) {
       if (event.pointerType === 'touch') return;
       pointerX = event.clientX;
       pointerY = event.clientY;
+      lightTarget = event.target && event.target.closest ? event.target.closest(lightTargets) : null;
+      if (lightTarget) {
+        var bounds = lightTarget.getBoundingClientRect();
+        lightX = Math.max(0, Math.min(100, (event.clientX - bounds.left) / Math.max(bounds.width, 1) * 100));
+        lightY = Math.max(0, Math.min(100, (event.clientY - bounds.top) / Math.max(bounds.height, 1) * 100));
+      }
       if (pointerFrame) return;
       pointerFrame = window.requestAnimationFrame(function () {
         root.style.setProperty('--spot-x', pointerX + 'px');
         root.style.setProperty('--spot-y', pointerY + 'px');
+        if (lightTarget) {
+          lightTarget.style.setProperty('--light-x', lightX.toFixed(1) + '%');
+          lightTarget.style.setProperty('--light-y', lightY.toFixed(1) + '%');
+        }
         body.classList.add('pointer-active');
         pointerFrame = 0;
       });
