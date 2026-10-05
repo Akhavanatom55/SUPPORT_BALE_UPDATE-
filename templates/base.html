@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="theme-color" content="#f3f6fb" id="themeColorMeta">
-  <meta name="application-name" content="وات پشتیبان">
-  <title>{% block title %}پنل مدیریت{% endblock %} — وات پشتیبان</title>
+  <meta name="application-name" content="پنل مدیریتی ربات پشتیبانی">
+  <title>{% block title %}پنل مدیریت{% endblock %} — پنل مدیریتی ربات پشتیبانی</title>
   <script>
     (function () {
       try {
@@ -23,7 +23,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v=20261004">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v=20261005">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 rx=%2728%27 fill=%27%23456bed%27/><path d=%27M27 36h46v30H48L35 76v-10h-8z%27 fill=%27white%27/></svg>">
 </head>
 <body class="{{ 'is-auth' if session.get('panel_user_id') else 'is-guest' }}">
@@ -38,7 +38,7 @@
   <aside class="sidebar" id="sidebar" aria-label="ناوبری پنل">
     <div class="brand">
       <span class="brand-mark">{{ icon('bot', 23) }}</span>
-      <div class="brand-copy"><b>وات پشتیبان</b><small>{{ org_name or 'مرکز مدیریت پشتیبانی' }}</small></div>
+      <div class="brand-copy"><b>پنل مدیریتی ربات پشتیبانی</b><small>{{ org_name or 'مرکز مدیریت پشتیبانی' }}</small></div>
     </div>
     <nav>
       <div class="nav-group">نمای کلی</div>
@@ -71,9 +71,9 @@
     <header class="topbar">
       <div class="topbar-start">
         <button type="button" class="menu-trigger" id="menuBtn" aria-label="باز کردن منو" aria-expanded="false" aria-controls="sidebar">{{ icon('menu', 20) }}</button>
-        <a class="topbar-brand" href="{{ url_for('dashboard') }}" aria-label="وات پشتیبان، داشبورد">
+        <a class="topbar-brand" href="{{ url_for('dashboard') }}" aria-label="پنل مدیریتی ربات پشتیبانی، داشبورد">
           <span class="mini-mark">{{ icon('bot', 19) }}</span>
-          <span class="topbar-brand-copy"><b>وات پشتیبان</b><small>پنل مدیریتی</small></span>
+          <span class="topbar-brand-copy"><b>پنل مدیریتی ربات پشتیبانی</b><small>فضای مدیریت هوشمند</small></span>
         </a>
         <span class="topbar-divider" aria-hidden="true"></span>
         <div class="workspace-note"><span>فضای کاری</span><b>{{ org_name or 'مرکز پشتیبانی' }}</b></div>
@@ -86,9 +86,9 @@
     </header>
     {% else %}
     <header class="topbar public-topbar">
-      <a class="public-brand" href="{{ url_for('home') }}" aria-label="وات پشتیبان، صفحه اصلی">
+      <a class="public-brand" href="{{ url_for('home') }}" aria-label="پنل مدیریتی ربات پشتیبانی، صفحه اصلی">
         <span class="mini-mark">{{ icon('bot', 21) }}</span>
-        <span class="public-brand-copy"><b>وات پشتیبان</b><small>سامانه پشتیبانی هوشمند</small></span>
+        <span class="public-brand-copy"><b>پنل مدیریتی ربات پشتیبانی</b><small>سامانه پشتیبانی هوشمند</small></span>
       </a>
       <div class="public-nav-actions">
         {{ appearance_controls() }}
@@ -101,7 +101,7 @@
     <div class="page-body">
       {% block content %}{% endblock %}
       {% if session.get('panel_user_id') %}
-      <footer class="page-footer"><span>وات پشتیبان <span class="footer-sep">·</span> پنل مدیریت</span><span>محیط کاری فارسی و راست‌چین</span></footer>
+      <footer class="page-footer"><span>پنل مدیریتی ربات پشتیبانی</span><span>محیط کاری فارسی و راست‌چین</span></footer>
       {% endif %}
     </div>
   </main>
@@ -116,6 +116,6 @@
     <div class="dlg-body"><h3 id="confirmTitle">تأیید عملیات</h3><p class="muted" id="confirmText"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-close>انصراف</button><button type="button" class="btn danger" id="confirmOk">تأیید و ادامه</button></div>
   </dialog>
-  <script src="{{ url_for('static', filename='app.js') }}?v=20261004" defer></script>
+  <script src="{{ url_for('static', filename='app.js') }}?v=20261005" defer></script>
 </body>
 </html>

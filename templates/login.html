@@ -4,9 +4,10 @@
 <div class="auth-wrap">
   <section class="center-card glow" aria-labelledby="login-title">
     <div class="logo">{{ icon('bot', 28) }}</div>
+    <span class="auth-brandname">پنل مدیریتی ربات پشتیبانی</span>
     <span class="eyebrow auth-eyebrow"><i></i>فضای امن مدیریت</span>
-    <h1 id="login-title">ورود به پنل مدیریت</h1>
-    <p>{{ org_name or 'مرکز پشتیبانی' }} <span aria-hidden="true">·</span> وات پشتیبان</p>
+    <h1 id="login-title">ورود مدیران</h1>
+    <p>{{ org_name or 'مرکز پشتیبانی' }} <span aria-hidden="true">·</span> ورود امن به سامانه</p>
     <form method="post" class="stack">
       <label>نام کاربری<input name="username" autocomplete="username" required autofocus dir="ltr" placeholder="نام کاربری مدیر"></label>
       <label>رمز عبور<input type="password" name="password" autocomplete="current-password" required dir="ltr" placeholder="رمز عبور خود را وارد کنید"></label>

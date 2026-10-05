@@ -1,4 +1,4 @@
-/* وات پشتیبان — Responsive support workspace
+/* پنل مدیریتی ربات پشتیبانی — Responsive support workspace
    RTL-first, accessible light/dark themes, five brand accents. */
 @property --ring-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 
@@ -809,4 +809,342 @@ dialog label { margin-top: 11px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   #fx { display: none; }
+}
+
+/* Signature finish: layered ambient light, tactile controls and calmer glass surfaces. */
+:root {
+  --line: rgb(26 48 78 / 7%);
+  --shadow-sm: 0 7px 22px rgb(28 48 82 / 6%);
+  --shadow-md: 0 22px 58px rgb(31 52 82 / 11%);
+  --shadow-lg: 0 34px 96px rgb(20 34 59 / 20%);
+  --control-glow: rgb(var(--primary-rgb) / .16);
+}
+:root[data-theme="dark"] {
+  --page: #08111f;
+  --surface: #101b2d;
+  --surface-soft: #132137;
+  --surface-raised: #17263c;
+  --surface-muted: #1a2a40;
+  --border: #26374e;
+  --border-strong: #344a66;
+  --text: #e7eef8;
+  --muted: #a3b1c4;
+  --soft: #7889a0;
+  --line: rgb(213 228 248 / 8%);
+  --shadow-sm: 0 8px 24px rgb(0 0 0 / 18%);
+  --shadow-md: 0 22px 58px rgb(0 0 0 / 30%);
+  --shadow-lg: 0 34px 96px rgb(0 0 0 / 48%);
+}
+
+/* A quiet animated lattice ties the glass panels to the moving light field. */
+body::before {
+  position: fixed;
+  z-index: 0;
+  inset: -76px;
+  content: "";
+  pointer-events: none;
+  opacity: .34;
+  will-change: transform;
+  background-image:
+    linear-gradient(rgb(var(--primary-rgb) / .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--primary-rgb) / .045) 1px, transparent 1px);
+  background-size: 76px 76px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 42%, #000 4%, transparent 83%);
+  mask-image: radial-gradient(ellipse at 50% 42%, #000 4%, transparent 83%);
+  animation: lattice-drift 42s linear infinite;
+}
+.bg-mesh::before {
+  position: absolute;
+  inset: -35%;
+  content: "";
+  opacity: .42;
+  pointer-events: none;
+  filter: blur(72px);
+  will-change: transform;
+  background: conic-gradient(from 20deg at 50% 50%,
+    rgb(var(--primary-rgb) / .08), transparent 24%,
+    rgb(52 190 190 / .065) 43%, transparent 64%,
+    rgb(148 111 229 / .055) 79%, transparent 94%);
+  animation: mesh-orbit 52s linear infinite;
+}
+.bg-mesh i { will-change: transform; }
+.bg-floor { opacity: .09; }
+#fx { opacity: .32; }
+:root[data-theme="dark"] body::before { opacity: .22; }
+:root[data-theme="dark"] .bg-mesh::before { opacity: .64; }
+:root[data-theme="dark"] .bg-floor { opacity: .2; }
+:root[data-theme="dark"] #fx { opacity: .38; }
+@keyframes lattice-drift { to { transform: translate3d(76px, 76px, 0); } }
+@keyframes mesh-orbit { to { transform: rotate(360deg) scale(1.06); } }
+
+/* Brand lockups stay legible while their light sweep remains intentionally subtle. */
+.brand { min-height: 76px; }
+.brand-copy b {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: 100%;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: normal;
+}
+.brand-mark, .mini-mark, .center-card .logo { position: relative; overflow: hidden; isolation: isolate; }
+.brand-mark::after, .mini-mark::after, .center-card .logo::after {
+  position: absolute;
+  inset: -75% -45%;
+  content: "";
+  transform: translateX(-85%) rotate(24deg);
+  background: linear-gradient(90deg, transparent 35%, rgb(255 255 255 / .26), transparent 65%);
+  animation: logo-sweep 8.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.brand-mark .i, .mini-mark .i, .center-card .logo .i { position: relative; z-index: 1; }
+.mini-mark { transition: transform .3s var(--ease), box-shadow .3s ease; }
+.topbar-brand:hover .mini-mark, .public-brand:hover .mini-mark { transform: translateY(-1px) rotate(-3deg); box-shadow: 0 9px 22px rgb(var(--primary-rgb) / .2); }
+.topbar-brand-copy b, .public-brand-copy b {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: 230px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.45;
+  white-space: normal;
+}
+.brand-copy small { margin-top: 2px; }
+@keyframes logo-sweep {
+  0%, 22% { transform: translateX(-85%) rotate(24deg); }
+  48%, 100% { transform: translateX(85%) rotate(24deg); }
+}
+
+/* Interactive light follows the pointer locally, with a distinct color per action. */
+.btn, .appearance-btn, .icon-btn, .menu-trigger, .logout, .chip-btn, .accent-option, .flash .x {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.btn::before, .appearance-btn::before, .icon-btn::before, .menu-trigger::before,
+.logout::before, .chip-btn::before, .accent-option::before, .flash .x::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(140px circle at var(--light-x, 50%) var(--light-y, 50%), var(--control-glow), transparent 76%);
+  transition: opacity .28s ease;
+  pointer-events: none;
+}
+.btn:hover::before, .btn:focus-visible::before,
+.appearance-btn:hover::before, .appearance-btn:focus-visible::before,
+.icon-btn:hover::before, .icon-btn:focus-visible::before,
+.menu-trigger:hover::before, .menu-trigger:focus-visible::before,
+.logout:hover::before, .logout:focus-visible::before,
+.chip-btn:hover::before, .chip-btn:focus-visible::before,
+.accent-option:hover::before, .accent-option:focus-visible::before,
+.flash .x:hover::before, .flash .x:focus-visible::before { opacity: 1; }
+.btn { --control-glow: rgb(var(--primary-rgb) / .2); border-radius: 12px; }
+.btn.primary {
+  --control-glow: rgb(255 255 255 / .35);
+  box-shadow: 0 8px 20px rgb(var(--primary-rgb) / .24), inset 0 1px 0 rgb(255 255 255 / .24);
+}
+.btn.primary:hover {
+  box-shadow: 0 13px 30px rgb(var(--primary-rgb) / .34), 0 0 28px rgb(var(--primary-rgb) / .16), inset 0 1px 0 rgb(255 255 255 / .28);
+}
+.btn.secondary { --control-glow: rgb(var(--primary-rgb) / .14); }
+.btn.secondary:hover {
+  box-shadow: 0 10px 25px rgb(var(--primary-rgb) / .12), 0 0 0 1px rgb(var(--primary-rgb) / .07);
+}
+.btn.ghost { --control-glow: rgb(var(--primary-rgb) / .13); }
+.btn.ghost:hover { box-shadow: 0 8px 20px rgb(var(--primary-rgb) / .08); }
+.btn.success { --control-glow: rgb(var(--success-rgb) / .2); }
+.btn.success:hover { box-shadow: 0 11px 25px rgb(var(--success-rgb) / .28), 0 0 24px rgb(var(--success-rgb) / .13); }
+.btn.danger { --control-glow: rgb(var(--danger-rgb) / .18); }
+.btn.danger:hover { box-shadow: 0 11px 25px rgb(var(--danger-rgb) / .25), 0 0 24px rgb(var(--danger-rgb) / .12); }
+.btn:focus-visible, .appearance-btn:focus-visible, .icon-btn:focus-visible,
+.menu-trigger:focus-visible, .chip-btn:focus-visible, .accent-option:focus-visible,
+.logout:focus-visible { outline-offset: 3px; }
+.btn .i { transition: transform .24s var(--ease), filter .24s ease; }
+.btn:hover .i { transform: translateY(-1px) scale(1.06); }
+.btn.primary:hover .i { filter: drop-shadow(0 0 5px rgb(255 255 255 / .48)); }
+.appearance-btn, .icon-btn, .menu-trigger, .accent-option { --control-glow: rgb(var(--primary-rgb) / .17); }
+.chip-btn { --control-glow: rgb(var(--primary-rgb) / .15); }
+.logout { --control-glow: rgb(255 255 255 / .26); }
+.flash .x { --control-glow: rgb(var(--danger-rgb) / .16); }
+
+/* Surfaces catch a soft pool of light; accent cards use their own color. */
+.panel:hover {
+  background-image: radial-gradient(460px circle at var(--light-x, 50%) var(--light-y, 8%), rgb(var(--primary-rgb) / .055), transparent 74%);
+}
+.panel.glow::after { filter: drop-shadow(0 0 8px rgb(var(--primary-rgb) / .22)); }
+.stat::before {
+  top: calc(var(--light-y, 0%) - 72px);
+  left: calc(var(--light-x, 0%) - 72px);
+  width: 144px;
+  height: 144px;
+}
+.stat:hover .si { transform: translateY(-2px) rotate(-3deg); box-shadow: 0 9px 22px color-mix(in srgb, var(--a) 20%, transparent); }
+.si { transition: transform .3s var(--ease), box-shadow .3s ease; }
+.feature { isolation: isolate; }
+.feature::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  opacity: 0;
+  background: radial-gradient(190px circle at var(--light-x, 50%) var(--light-y, 50%), color-mix(in srgb, var(--a) 15%, transparent), transparent 75%);
+  transition: opacity .3s ease;
+  pointer-events: none;
+}
+.feature::after {
+  position: absolute;
+  right: 18px;
+  bottom: 0;
+  left: 18px;
+  height: 2px;
+  content: "";
+  transform: scaleX(.12);
+  transform-origin: right;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent, var(--a));
+  opacity: .8;
+  transition: transform .36s var(--ease);
+}
+.feature:hover::before { opacity: 1; }
+.feature:hover::after { transform: scaleX(1); }
+.feature .fi { transition: transform .28s var(--ease), box-shadow .28s ease; }
+.feature:hover .fi { transform: translateY(-2px) rotate(-4deg); box-shadow: 0 8px 20px color-mix(in srgb, var(--a) 17%, transparent); }
+.welcome-card:hover {
+  background-image:
+    radial-gradient(480px circle at var(--light-x, 12%) var(--light-y, 40%), rgb(var(--primary-rgb) / .14), transparent 68%),
+    radial-gradient(ellipse at 12% 40%, rgb(var(--primary-rgb) / .11), transparent 38%),
+    linear-gradient(105deg, var(--surface), color-mix(in srgb, var(--primary) 4%, var(--surface)));
+  box-shadow: var(--shadow-md), 0 0 34px rgb(var(--primary-rgb) / .07);
+}
+.welcome-label .i { transform-origin: center; animation: sparkle-turn 7s ease-in-out infinite; }
+@keyframes sparkle-turn { 0%, 75%, 100% { transform: rotate(0) scale(1); } 82% { transform: rotate(22deg) scale(1.16); } 89% { transform: rotate(-10deg) scale(1.03); } }
+
+/* Deliberate entrance rhythm keeps the information hierarchy easy to scan. */
+.page-body > * { animation: content-arrive .56s var(--ease) both; }
+.page-body > :nth-child(2) { animation-delay: 65ms; }
+.page-body > :nth-child(3) { animation-delay: 125ms; }
+.page-body > :nth-child(4) { animation-delay: 185ms; }
+.page-body > :nth-child(5) { animation-delay: 245ms; }
+.page-body > :nth-child(6) { animation-delay: 305ms; }
+.stats > :nth-child(1) { --stagger: 0; }
+.stats > :nth-child(2) { --stagger: 1; }
+.stats > :nth-child(3) { --stagger: 2; }
+.stats > :nth-child(4) { --stagger: 3; }
+.stats > :nth-child(5) { --stagger: 4; }
+.stats > :nth-child(6) { --stagger: 5; }
+.stats > .stat { animation: content-arrive .58s var(--ease) both; animation-delay: calc(var(--stagger, 0) * 55ms + 80ms); }
+.grid-2 > .panel { animation: content-arrive .58s var(--ease) both; }
+.grid-2 > .panel:nth-child(2) { animation-delay: 100ms; }
+.features > :nth-child(1) { --stagger: 0; }
+.features > :nth-child(2) { --stagger: 1; }
+.features > :nth-child(3) { --stagger: 2; }
+.features > :nth-child(4) { --stagger: 3; }
+.features > .feature { animation: content-arrive .58s var(--ease) both; animation-delay: calc(var(--stagger, 0) * 75ms + 80ms); }
+.hero-copy { animation: content-arrive .7s var(--ease) both; }
+.hero-box { animation: content-arrive .75s var(--ease) 100ms both; }
+@keyframes content-arrive {
+  from { opacity: 0; translate: 0 12px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* Public landing page: luminous typography, orbiting system mark and feature tiles. */
+.hero h1 span {
+  color: var(--primary-ink);
+  background: linear-gradient(110deg, var(--primary-ink), #1d8793 48%, #7657c4 92%);
+  background-size: 180% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-flow 9s ease-in-out infinite alternate;
+}
+@keyframes text-flow { to { background-position: 100% 50%; } }
+.hero .badge.live { box-shadow: 0 6px 20px rgb(var(--success-rgb) / .07); }
+.hero-box {
+  border-color: rgb(var(--primary-rgb) / .19);
+  box-shadow: var(--shadow-md), 0 0 40px rgb(var(--primary-rgb) / .075), inset 0 1px 0 rgb(255 255 255 / .58);
+  transition: border-color .3s ease, box-shadow .3s ease, transform .3s var(--ease);
+}
+:root[data-theme="dark"] .hero-box { box-shadow: var(--shadow-md), 0 0 54px rgb(var(--primary-rgb) / .12), inset 0 1px 0 rgb(255 255 255 / .06); }
+.hero-box:hover { border-color: rgb(var(--primary-rgb) / .35); box-shadow: var(--shadow-lg), 0 0 55px rgb(var(--primary-rgb) / .14); }
+.hero-status { box-shadow: 0 4px 16px rgb(var(--success-rgb) / .06); }
+.hero-status i { box-shadow: 0 0 0 4px rgb(var(--success-rgb) / .1), 0 0 12px rgb(var(--success-rgb) / .36); animation: status-breathe 2.4s ease-in-out infinite; }
+@keyframes status-breathe { 50% { box-shadow: 0 0 0 7px rgb(var(--success-rgb) / 0), 0 0 17px rgb(var(--success-rgb) / .46); } }
+.orbit .core { box-shadow: 0 17px 45px rgb(var(--primary-rgb) / .38), 0 0 30px rgb(var(--primary-rgb) / .18), inset 0 1px 0 rgb(255 255 255 / .28); }
+.feature h3 { transition: color .2s ease; }
+.feature:hover h3 { color: var(--primary-ink); }
+
+/* Login receives a stronger, focused glow without compromising form contrast. */
+.center-card {
+  border-color: rgb(var(--primary-rgb) / .2);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow-lg), 0 0 42px rgb(var(--primary-rgb) / .08), inset 0 1px 0 rgb(255 255 255 / .42);
+}
+:root[data-theme="dark"] .center-card { box-shadow: var(--shadow-lg), 0 0 54px rgb(var(--primary-rgb) / .12), inset 0 1px 0 rgb(255 255 255 / .06); }
+.auth-brandname {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 13px auto 0;
+  padding: 5px 12px;
+  border: 1px solid rgb(var(--primary-rgb) / .16);
+  border-radius: 999px;
+  color: var(--primary-ink);
+  background: linear-gradient(110deg, rgb(var(--primary-rgb) / .09), rgb(61 183 184 / .07));
+  box-shadow: 0 5px 18px rgb(var(--primary-rgb) / .08);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.7;
+}
+.center-card h1 { margin-top: 12px; }
+.center-card input { background: color-mix(in srgb, var(--surface-soft) 88%, transparent); }
+.center-card input:focus { background: var(--surface); }
+.auth-footnote .i { display: inline-block; margin-inline-end: 3px; vertical-align: -3px; color: var(--success); }
+
+/* Polished details across navigation, tables and dialogs. */
+.sidebar { background: color-mix(in srgb, var(--surface) 90%, transparent); }
+.sidebar nav a { min-height: 44px; }
+.sidebar nav a:hover {
+  background-image: radial-gradient(130px circle at var(--light-x, 50%) var(--light-y, 50%), rgb(var(--primary-rgb) / .1), transparent 78%);
+}
+.sidebar nav a.active { box-shadow: inset 0 1px 0 rgb(255 255 255 / .46), 0 6px 18px rgb(var(--primary-rgb) / .055); }
+.table-wrap { transition: border-color .25s ease, box-shadow .25s ease; }
+.table-wrap:hover { border-color: color-mix(in srgb, var(--border-strong) 65%, var(--primary)); box-shadow: 0 10px 30px rgb(var(--primary-rgb) / .055); }
+tbody tr:hover { box-shadow: inset 3px 0 0 rgb(var(--primary-rgb) / .35); }
+.tabs a.on { box-shadow: 0 3px 12px rgb(var(--primary-rgb) / .09), inset 0 1px 0 rgb(255 255 255 / .72); }
+.status.open::before { animation: status-dot-pulse 2.8s ease-in-out infinite; }
+dialog { border-color: rgb(var(--primary-rgb) / .28); }
+
+@media (min-width: 1031px) and (max-width: 1190px) {
+  .topbar { padding-inline: 20px; }
+  .topbar-start { gap: 10px; }
+  .topbar-divider, .workspace-note, .date-chip { display: none; }
+  .topbar-tools { gap: 7px; }
+  .topbar-brand-copy b { max-width: 180px; font-size: 12px; }
+}
+@media (max-width: 620px) {
+  .topbar-brand-copy b { max-width: 126px; font-size: 11.5px; white-space: normal; }
+  .public-brand-copy b { max-width: 132px; font-size: 12px; }
+  .brand-copy b { font-size: 12px; }
+}
+@media (max-width: 420px) {
+  .topbar-brand-copy b { max-width: 112px; }
+  .public-brand-copy b { max-width: 108px; }
+  .topbar-brand-copy small, .public-brand-copy small { display: none; }
+  .brand { gap: 9px; }
+}
+@media (hover: none), (pointer: coarse) {
+  .btn:hover, .appearance-btn:hover, .icon-btn:hover, .menu-trigger:hover,
+  .chip-btn:hover, .logout:hover, .feature:hover, .hero-box:hover { transform: none; }
+  .btn::before, .appearance-btn::before, .icon-btn::before, .menu-trigger::before,
+  .logout::before, .chip-btn::before, .accent-option::before, .flash .x::before { display: none; }
+}
+
+@keyframes status-dot-pulse { 50% { box-shadow: 0 0 0 5px transparent, 0 0 10px currentColor; } }
+@media (max-width: 420px) {
+  .public-nav-actions > .btn { display: none; }
 }
